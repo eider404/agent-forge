@@ -99,10 +99,13 @@ over-invest feasibility and under-invest value — and value means wanting it *m
 
 ## Generate the PRD
 
-Save the PRD to **`.agents/PRDs/<YYYY-MM-DD>/<kebab-slug>.md`**, where `<YYYY-MM-DD>` is today's date (get it
-with `date +%F`) and the slug comes from the epic/product title or the core idea (e.g.
-`.agents/PRDs/2026-10-06/pluggable-ingestion.md`). Create the folders if they don't exist. Never hardcode
-`PRD.md`; if that exact path already exists, add a numeric suffix (`-2`) instead of overwriting it.
+Save the PRD to **`.agents/features/<YYYY-MM-DD>-<kebab-slug>/prd.md`**: one folder per feature, which later holds
+that feature's `architecture.md` too. `<YYYY-MM-DD>` is today's date (get it with `date +%F`) and only orders the
+folders chronologically; the slug comes from the epic/product title or the core idea (e.g.
+`.agents/features/2026-10-06-pluggable-ingestion/prd.md`). Create the folders if they don't exist. The filename is
+always `prd.md`, never the slug. If a feature folder with that slug already exists (any date), don't overwrite it:
+ask whether this PRD continues that feature, otherwise add a numeric suffix to the slug (`-2`).
+
 **If the user also names a tracker destination** (e.g. "write it up as a Confluence page" or "create it as an
 epic in Jira"), publish the same content there too, via the Atlassian MCP or the relevant tool, since that is
 where their team's epics live; the local file is always written. Product sections only, scannable:
@@ -119,10 +122,10 @@ where their team's epics live; the local file is always written. Product section
 
 ## Output + hand off
 
-- Confirm where it landed (the `.agents/PRDs/<YYYY-MM-DD>/<slug>.md` path, plus the **tracker page URL** if a
+- Confirm where it landed (the `.agents/features/<YYYY-MM-DD>-<slug>/prd.md` path, plus the **tracker page URL** if a
   destination was named); 3-5 line summary leading with the **thesis** and **hypothesis**; show what's evidenced
   vs assumed and the open-questions count.
-- **Next step:** "Decide *how* to build it — run **`plan-architecture`** to make the engineering decisions (the spec)
+- **Next step:** "Decide *how* to build it — run **`plan-architecture`** with the feature folder to make the engineering decisions (the spec)
   that this PRD deliberately left open. That's what `rules-create-global` then turns into your global rules."
 
 ## Success criteria — the six checks of a good PRD

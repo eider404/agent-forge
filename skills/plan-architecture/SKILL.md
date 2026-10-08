@@ -1,21 +1,21 @@
 ---
 name: plan-architecture
-description: Interactively explore HOW to build a PRD and decide the high-level architecture — the approach, stack, libraries, data shape, boundaries, and risks the PRD deliberately left open — in the same language as the PRD. Runs only after `plan-create-prd`; it always needs a PRD as input and sends the user to `plan-create-prd` first if there is none. A working session with a CTO/staff-engineer advisor that asks questions, proposes 2–3 options with trade-offs, recommends a direction with reasoning, and flags what to de-risk with a spike. Writes a high-level architecture decision doc to `.agents/architecture/<YYYY-MM-DD>/<kebab-slug>.md` (plus a linked page in the tracker when the PRD was published there) — NOT a task-by-task implementation plan (that comes later, per ticket, with `piv-plan-implementation`).
-argument-hint: "[path to the PRD: .agents/PRDs/<date>/<slug>.md] · [optional: paths to reference docs to ground in] (blank = offer the latest PRD)"
+description: Interactively explore HOW to build a PRD and decide the high-level architecture — the approach, stack, libraries, data shape, boundaries, and risks the PRD deliberately left open — in the same language as the PRD. Runs only after `plan-create-prd`; it always needs a PRD as input and sends the user to `plan-create-prd` first if there is none. A working session with a CTO/staff-engineer advisor that asks questions, proposes 2–3 options with trade-offs, recommends a direction with reasoning, and flags what to de-risk with a spike. Writes a high-level architecture decision doc to `architecture.md` in the PRD's feature folder, `.agents/features/<YYYY-MM-DD>-<kebab-slug>/` (plus a linked page in the tracker when the PRD was published there) — NOT a task-by-task implementation plan (that comes later, per ticket, with `piv-plan-implementation`).
+argument-hint: "[feature folder: .agents/features/<date>-<slug>/ (or its prd.md)] · [optional: paths to reference docs to ground in] (blank = offer the latest PRD)"
 ---
 
 # Architect: Explore the Approach, Decide the Architecture
 
-**Input**: $ARGUMENTS — the **PRD** produced by `plan-create-prd` (normally
-`.agents/PRDs/<YYYY-MM-DD>/<slug>.md`). This skill runs **only after the PRD**; it never starts from a bare idea,
+**Input**: $ARGUMENTS — the **PRD** produced by `plan-create-prd`, normally given as its feature folder
+(`.agents/features/<YYYY-MM-DD>-<slug>/`, which holds `prd.md`) or the path to that `prd.md`. This skill runs **only after the PRD**; it never starts from a bare idea,
 an epic or a brief.
 
-- **Blank** → look in `.agents/PRDs/` for the most recent PRD (date folders sort chronologically), offer it
-  ("Architect `<path>`?") and **GATE**.
+- **Blank** → look in `.agents/features/` for the most recent folder that has a `prd.md` and no `architecture.md`
+  (date-prefixed folders sort chronologically), offer it ("Architect `<folder>`?") and **GATE**.
 - **No PRD exists** (or what was passed is not a PRD) → stop. Say the PRD comes first and point to
   `plan-create-prd`; don't improvise one here.
 - **A tracker reference** (a Confluence/Jira URL or key of the PRD's page) → fetch it via the Atlassian MCP; if the
-  local `.agents/PRDs/` copy exists, prefer that one.
+  local `.agents/features/*/prd.md` copy exists, prefer that one.
 
 **Reference docs (optional):** if any paths were passed alongside the PRD — API docs, product/engineering
 docs, ADRs, prior research, a competitor teardown, a Confluence page — **read them first.** They ground the
@@ -139,12 +139,11 @@ Reversible, low-cost calls → just decide and move on.
 
 ## The output: a high-level architecture decision doc
 
-Only after the calls are made. Save it to **`.agents/architecture/<YYYY-MM-DD>/<kebab-slug>.md`**, where
-`<YYYY-MM-DD>` is today's date (get it with `date +%F`, not the PRD's date) and the slug is the **PRD's slug**, so
-the pair is easy to match (e.g. `.agents/PRDs/2026-10-05/pluggable-ingestion.md` →
-`.agents/architecture/2026-10-06/pluggable-ingestion.md`). Create the folders if they don't exist. Never hardcode
-`architecture.md`; if that exact path already exists, add a numeric suffix (`-2`) instead of overwriting it. The
-local file is always written.
+Only after the calls are made. Save it as **`architecture.md` in the same feature folder as the PRD**
+(`.agents/features/<YYYY-MM-DD>-<slug>/architecture.md`), so the pair lives together; reuse the folder, don't create a new one or a new date.
+If the PRD was given as a tracker URL with no local folder, create `.agents/features/<today>-<slug>/` (`date +%F`).
+The filename is always `architecture.md`; if it already exists, don't overwrite it: add a numeric suffix
+(`architecture-2.md`). The local file is always written.
 
 **If the PRD was also published in a tracker** (a Confluence/Jira page or epic) **or the user names a
 destination**, also publish the same content there — via the Atlassian MCP — as a **separate page, child of the
@@ -194,11 +193,11 @@ from the PRD stay here, marked as the PRD owner's.
 
 ## After this
 
-Confirm where you wrote it (the `.agents/architecture/<YYYY-MM-DD>/<slug>.md` path, plus the **tracker page URL**
+Confirm where you wrote it (the `.agents/features/<YYYY-MM-DD>-<slug>/architecture.md` path, plus the **tracker page URL**
 if one was published), summarize the recommended approach + the key calls in a few lines, then offer the natural
 next moves and let the user pick — **don't force a pipeline**:
 
-- **Slice it into tickets** — run `/piv-slice-epic` with the PRD and this architecture doc to break the work
+- **Slice it into tickets** — run `/piv-slice-epic` with the feature folder (PRD + this architecture doc) to break the work
   into PIV-sized tickets, and create the GitHub issues / Jira tickets from them.
 - **Keep going here** — stay in this conversation to refine the decisions, or to create the issues/tickets directly.
 - **Small scope? Plan it in one go** — skip slicing and go straight to `piv-plan-implementation` for the implementation plan.
@@ -215,5 +214,5 @@ next moves and let the user pick — **don't force a pipeline**:
 - ✅ **Risky / one-way calls get a spike**, not a guess.
 - ✅ **Grounded in the PRD** — scoped to its MVP; its hypothesis, metrics and non-goals shaped the decisions.
 - ✅ **Nothing invented** — unknowns marked "TBD — needs validation".
-- ✅ **In the user's language**, saved at `.agents/architecture/<YYYY-MM-DD>/<slug>.md`.
+- ✅ **In the user's language**, saved as `architecture.md` next to the PRD in its feature folder.
 - ✅ **Stays anchored to the user's goals.**
