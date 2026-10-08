@@ -148,7 +148,7 @@ The filename is always `architecture.md`; if it already exists, don't overwrite 
 **If the PRD was also published in a tracker** (a Confluence/Jira page or epic) **or the user names a
 destination**, also publish the same content there — via the Atlassian MCP — as a **separate page, child of the
 PRD's page/epic, linked both ways**: the PRD stays pure intent, the architecture (the *how*) lives beside it, and
-each links to the other. Two clean, linked sources are what let `piv-slice-epic` and `piv-plan-implementation`
+each links to the other. Two clean, linked sources are what let `plan-slice-tickets` and `piv-plan-implementation`
 read intent and architecture separately later. Don't fold the architecture into the PRD — a PRD never carries
 engineering decisions.
 
@@ -197,7 +197,7 @@ Confirm where you wrote it (the `.agents/features/<YYYY-MM-DD>-<slug>/architectu
 if one was published), summarize the recommended approach + the key calls in a few lines, then offer the natural
 next moves and let the user pick — **don't force a pipeline**:
 
-- **Slice it into tickets** — run `/piv-slice-epic` with the feature folder (PRD + this architecture doc) to break the work
+- **Slice it into tickets** — run `/plan-slice-tickets` with the feature folder (PRD + this architecture doc) to break the work
   into PIV-sized tickets, and create the GitHub issues / Jira tickets from them.
 - **Keep going here** — stay in this conversation to refine the decisions, or to create the issues/tickets directly.
 - **Small scope? Plan it in one go** — skip slicing and go straight to `piv-plan-implementation` for the implementation plan.
