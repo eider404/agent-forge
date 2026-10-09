@@ -18,8 +18,9 @@ Perform a technical code review of the changed files.
 
 ## Language
 
-Write the report in the plan's language (or the user's). Field names (`severity`, `file`, …), severity values and
-the pass sentence stay in English, because `piv-fix-review-findings` reads them.
+Write the report in the plan's language (or the user's). Field names (`severity`, `file`, …), severity values, the
+`AC-n` IDs, the `Yes / Partial / No` values and the pass sentence stay in English, so findings can be scanned and
+grepped the same way in every review.
 
 ## Core Principles
 
@@ -62,7 +63,7 @@ git ls-files --others --exclude-standard
 ```
 
 **Clean tree?** If there is nothing uncommitted and the branch has commits ahead of the base (a PR already cut, or a
-re-review after `piv-fix-review-findings` committed its fixes), review those commits: `git diff <base>...HEAD`, with
+re-review after the fixes were committed), review those commits: `git diff <base>...HEAD`, with
 the base detected as `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'`
 (fallback `main`). Record which scope you reviewed in the report. If there is nothing at all, say "nothing to
 review" and stop.
@@ -105,9 +106,15 @@ Drop what doesn't survive. This skill reads and runs checks; it never edits the 
 
 ## Output Format
 
-Save a new file to `.claude/code-reviews/<name>.md`, where `<name>` is the plan's file stem plus `-review`
-(`t-2-source-adapter-review.md`) or, without a plan, a short descriptive name. Never overwrite an existing review:
-add a numeric suffix (`…-review-2.md`), which also keeps the first review next to a re-review.
+Save a new file in the feature folder's `reviews/` (create it), next to the plan and the report:
+
+- **With a plan**: `<feature folder>/reviews/<plan-file-stem>-review.md` (`reviews/t-2-source-adapter-review.md`).
+- **Without a plan**: the feature folder the changes belong to, if they clearly touch one; otherwise
+  `.agents/features/<today>-<short-name>/reviews/<short-name>-review.md` (`date +%F`), the same fallback
+  `piv-implement` uses for its report.
+
+Never overwrite an existing review: add a numeric suffix (`…-review-2.md`), which also keeps the first review next to
+a re-review.
 
 **Stats:**
 
@@ -142,8 +149,9 @@ If no issues found: "Code review passed. No technical issues detected."
 ## Report
 
 After saving, print the path to the review, the count of findings per severity and, with a plan, the `AC-n` that are
-not fully delivered. Then the next step: with findings, `piv-fix-review-findings <review path>`; passed, `piv-commit`
-(or open the PR if the work is already committed).
+not fully delivered. Then the next step: with findings, fix the ones worth fixing now (by hand, or by asking the
+agent to work through this review file), defer the rest as tickets, then `piv-validate` and run this review again;
+passed, `piv-commit` (or open the PR if the work is already committed).
 
 ## Important
 

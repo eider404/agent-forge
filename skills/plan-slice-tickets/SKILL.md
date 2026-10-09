@@ -26,17 +26,23 @@ is the unit of motion; **tickets are the bridge.** This skill does the slicing.
 
 ## Language
 
-Work in the **language of the PRD**: the conversation, `tickets.md` (headings included) and the closing summary.
-Keep the "TBD — needs validation" marker, translated, and never invent a requirement or acceptance criterion:
-unknown → mark it TBD.
+Work in the **language of the PRD** for everything a person reads: the conversation, the content of `tickets.md`
+(titles, scope, criteria, context) and the closing summary. **The structure of `tickets.md` stays in English,
+verbatim**: section headings (`Tickets`, `Dependency graph`, `Suggested execution order`), field labels (`Type`,
+`Scope`, `Acceptance criteria`, `Architecture decisions`, `Per-ticket context`, `Blocked by open questions / spikes`,
+`Files touched`, `Depends on`), IDs (`T-n`, `AC-n`), the `Type` values (`build` / `spike`) and the marker
+`TBD — needs validation`. `piv-plan-implementation` and `piv-run-full-loop` read them by name; a translated label
+breaks them.
+
+Never invent a requirement or acceptance criterion: unknown → `TBD — needs validation`.
 
 ## Process
 
 ### Step 1 — Read the sources
 
-Read both docs fully. From the PRD: MVP (the scope you slice), success metrics, non-goals, open questions. From
-the architecture: recommended approach, key decisions, missing pieces, spikes, open questions. Slicing must
-respect those calls.
+Read both docs fully. From the PRD: MVP (the scope you slice), constraints, success metrics, non-goals, open
+questions. From the architecture: recommended approach, key decisions, missing pieces, spikes (and any `Outcome:`
+already recorded), open questions. Slicing must respect those calls.
 
 ### Step 2 — Orient on the code surface (if not already primed)
 
@@ -62,8 +68,9 @@ high regardless; only the *scope* is larger.
 
 Carry the architecture through so nothing it decided is lost:
 
-- Each **spike** becomes its own ticket (type `spike`, with its decision rule as acceptance criterion), placed
-  before the tickets that depend on its outcome.
+- Each **spike** without an `Outcome:` becomes its own ticket (type `spike`, with its decision rule as acceptance
+  criterion), placed before the tickets that depend on its outcome, which list it in `Depends on`. Building it
+  writes the outcome back into `architecture.md`.
 - Each **missing piece** lands in at least one ticket.
 - An **open question** that blocks a ticket is named in that ticket; don't answer product questions here.
 - **Non-goals** and growth beyond the MVP are not ticketed.
@@ -82,7 +89,9 @@ the dependency informs the dependent's plan. Independent tickets can be planned 
 Fill [templates/ticket-breakdown.md](templates/ticket-breakdown.md) and save it as **`tickets.md` in the same
 feature folder** (`.agents/features/<YYYY-MM-DD>-<slug>/tickets.md`); reuse the folder, don't create a new one or
 a new date. If the input was a tracker URL with no local folder, create `.agents/features/<today>-<slug>/`
-(`date +%F`). If `tickets.md` already exists, don't overwrite it: add a numeric suffix (`tickets-2.md`). The local
+(`date +%F`). `tickets.md` is one canonical file per feature. If it already exists, **GATE**: show what would change
+and ask before overwriting it (git keeps the previous version). Tickets that already have a plan or a report in
+`plans/` / `reports/` keep their `T-n` number and are not re-sliced; new tickets take the next free numbers. The local
 file is always written.
 
 Every ticket carries its own context, so a loop can pick it up later without re-reading the whole feature. The
@@ -102,10 +111,11 @@ PRD's epic/page, linked to the architecture page. Write the created keys/URLs ne
 ## Output + hand off
 
 Confirm where it landed (the `.agents/features/<YYYY-MM-DD>-<slug>/tickets.md` path, plus the **tracker keys/URLs**
-if published); summarize the waves in a few lines. Then each ticket enters its own PIV loop: straight to
-`/piv-plan-implementation` if it is well-scoped (it primes what it needs), or `/prime-codebase` first if it needs
-more orientation. **Priming is optional**; the per-ticket context is what makes that possible. Wave 1 tickets can
-start in parallel.
+if published); summarize the waves in a few lines. Then each ticket enters its own PIV loop. The default is
+`/piv-run-full-loop <feature folder>`: it picks the next ready ticket, cuts its branch, plans, implements and commits.
+By hand: `/piv-plan-implementation <folder> T-n` → `/piv-implement <plan>` → `/piv-commit`. **Priming is optional**;
+the per-ticket context is what makes that possible. Wave 1 tickets can start in parallel (one worktree each); a
+dependent ticket waits until its dependency's PR is merged.
 
 ## Success criteria
 
@@ -115,7 +125,8 @@ start in parallel.
 - ✅ **Architecture honored**: spikes are tickets, missing pieces are covered, blocking open questions are named.
 - ✅ **Dependency graph and waves** show what runs in parallel and what waits.
 - ✅ **Nothing invented**: unknowns marked "TBD — needs validation".
-- ✅ **In the PRD's language**, saved as `tickets.md` next to the PRD and architecture.
+- ✅ **Content in the PRD's language, structure in English** (headings, field labels, IDs), saved as `tickets.md`
+  next to the PRD and architecture.
 - ✅ **Tracker tickets created only after the user confirmed.**
 
 ## Notes

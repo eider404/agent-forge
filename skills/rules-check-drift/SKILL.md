@@ -1,6 +1,6 @@
 ---
 name: rules-check-drift
-description: "Check whether your rules file (CLAUDE.md or AGENTS.md) still matches the codebase after recent changes — run before a merge, or fold into your code-review pass. Reports stale/now-false rules, drifted architecture-map entries, and any new invariant worth adding, each with the minimal edit. Advisory and anti-bloat: it keeps the rules file true, never longer than it needs to be."
+description: "Checks whether the project's rules file (CLAUDE.md or AGENTS.md) and the `## validate` commands in `.claude/references/conventions.md` still match the codebase after recent changes. Reports stale or now-false rules, drifted architecture-map entries, validate commands that no longer exist, and any new invariant worth adding, each with the minimal edit. Advisory and anti-bloat: keeps the rules true, never longer. Use before a merge, after `piv-review-changes`, or when asked to \"check the rules for drift\", \"is CLAUDE.md still accurate\" or \"update the rules after this change\"."
 argument-hint: "[optional diff range, e.g. main...HEAD]"
 ---
 
@@ -19,8 +19,10 @@ rules file against what just changed and proposes the **smallest** edit that kee
   `piv-run-full-loop` already committed the ticket), fall back to `<base>...HEAD`, the base being the repo's default
   branch, detected as `piv-review-changes` does (fallback `main`).
 - **Scope: the project's rules file(s)** — `CLAUDE.md` and/or `AGENTS.md`, the root file + any package-level
-  ones. (If `CLAUDE.md` is just a `@AGENTS.md` import, check `AGENTS.md`.) Ignore README, `docs/`, and `.claude/`
-  agent/command/skill files. This skill exists to keep the *rules* honest, nothing else.
+  ones. (If `CLAUDE.md` is just a `@AGENTS.md` import, check `AGENTS.md`.) Plus the **`## validate` section of
+  `.claude/references/conventions.md`**, if it exists: `piv-validate` and the planner run those commands as written,
+  so a renamed script or a moved config breaks every loop. Ignore README, `docs/`, the rest of `.claude/references/`
+  and `.claude/` agent/command/skill files. This skill exists to keep the *rules* honest, nothing else.
 
 ## Process
 
@@ -31,11 +33,13 @@ and any new invariant the change establishes.
 ### 2. Read the rules file as it is now
 Load the project's rules file — `CLAUDE.md` or `AGENTS.md` (and any package-scoped ones). Hold each claim against the change set.
 
-### 3. Flag ONLY these three things
+### 3. Flag ONLY these four things
 1. **A stated rule or fact is now false** — e.g. "routes live in `src/routes/`" but they moved. → fix it.
 2. **The architecture map drifted** — a path or "where things live" pointer no longer matches reality.
    → fix the wrong entry (don't catalog every new file).
-3. **A new durable invariant must hold going forward** — the change introduces a rule that must stay true
+3. **A `## validate` command no longer exists** — the script, target or config directory it names was renamed or
+   removed (check the manifests and CI the change touched). → fix the one bullet.
+4. **A new durable invariant must hold going forward** — the change introduces a rule that must stay true
    (e.g. "never call the DB from handlers — go through `repository/`"). → add it as **one line**.
 
 Everything else, leave alone. Do **not** suggest an edit to *record that a feature was added* (that's a
@@ -56,6 +60,7 @@ background/rationale/prose that doesn't steer future work.
 | Where | What's wrong | Minimal fix |
 |-------|--------------|-------------|
 | "Architecture" map | routes moved `src/routes/` → `src/api/routes/` | update the one path |
+| `conventions.md › ## validate` | `pnpm typecheck` script renamed to `pnpm check:types` | update the one bullet |
 
 ### Add (new invariant only)
 - <one-line rule> — established by <the change that made it durable>
@@ -67,6 +72,6 @@ If nothing drifted: **"The rules file is still accurate for these changes — no
 
 ## Rules
 - **Advisory.** Report the drift; only apply the edits (or commit them via `piv-commit`) if the caller explicitly asks.
-- **Rules file only** (`CLAUDE.md` / `AGENTS.md`). Not README, not docs.
+- **Rules file and `## validate` only** (`CLAUDE.md` / `AGENTS.md`, `conventions.md › ## validate`). Not README, not docs.
 - **Lean by default.** When in doubt, suggest nothing.
-- **Run it before every merge** (or as part of `/piv-review-changes`) so your rules never drift behind the code.
+- **Run it before every merge** (after `/piv-review-changes`, on the same range) so your rules never drift behind the code.

@@ -2,14 +2,16 @@
 
 Source: <path (and tracker URL, if any) of the PRD> · <path (and tracker URL, if any) of the architecture>
 
-<!-- Headings in the PRD's language. Skip nothing silently: write "TBD — needs validation" for unknowns. -->
+<!-- Content (titles, scope, criteria, context) in the PRD's language. Headings, field labels, IDs, Type values
+     and the "TBD — needs validation" marker stay in English, verbatim: piv-plan-implementation and
+     piv-run-full-loop read them by name. Skip nothing silently: write "TBD — needs validation" for unknowns. -->
 
 ## Feature summary
 Goal in 2–3 lines (from the PRD's problem and thesis), scoped to the MVP.
 
 ## Tickets
 
-### T-1 — <title>
+### T-1 — <title> <(tracker key/URL, once published)>
 - **Type:** build | spike
 - **Scope:** one testable concern.
 - **Acceptance criteria:**

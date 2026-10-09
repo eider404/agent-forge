@@ -31,15 +31,17 @@ Briefly summarize any external context loaded before continuing — this frames 
 
 ### 2. Analyze Project Structure
 
-List all tracked files:
-!`git ls-files`
+List tracked files (first 500):
+!`(git ls-files 2>/dev/null || echo "not a git repository") | head -500`
 
-Show directory structure:
-!`tree -L 3 -I 'node_modules|__pycache__|.git|dist|build'`
+Show directory structure (falls back to `find` where `tree` isn't installed):
+!`tree -L 3 -I 'node_modules|__pycache__|.git|dist|build' 2>/dev/null || find . -maxdepth 3 -not -path '*/.git*' -not -path '*/node_modules*' -not -path '*/__pycache__*' 2>/dev/null | head -300`
+
+If the list was cut at 500, widen only where the task needs it (`git ls-files <dir>`).
 
 ### 3. Read Core Documentation
 
-- Read CLAUDE.md or similar global rules file
+- Read CLAUDE.md or AGENTS.md (the global rules file) and `.claude/references/conventions.md` if present
 - Read README files at project root and major directories
 - Read any architecture documentation
 
@@ -54,10 +56,10 @@ Based on the structure, identify and read:
 ### 5. Understand Current State
 
 Check recent activity:
-!`git log -10 --oneline`
+!`git log -10 --oneline 2>/dev/null || echo "no git history"`
 
 Check current branch and status:
-!`git status`
+!`git status 2>/dev/null || echo "not a git repository"`
 
 ## Output Report
 

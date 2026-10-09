@@ -1,6 +1,6 @@
 ---
 name: piv-commit
-description: Creates one atomic git commit with a conventional-commit message (`<tag>: <description>`) for all uncommitted changes, keeping secrets (`.env`, private keys, credentials) and build output or oversized files out of history and reporting what it left out. Use when work is complete and ready to be committed, or when asked to "commit", "commit this", "commit my changes" or "save this work to git". Does not push.
+description: 'Creates one atomic git commit with a conventional-commit message (`<tag>: <description>`) for all uncommitted changes, keeping secrets (`.env`, private keys, credentials) and build output or oversized files out of history and reporting what it left out. Use when work is complete and ready to be committed, or when asked to "commit", "commit this", "commit my changes" or "save this work to git". Does not push.'
 ---
 
 # Commit: Create a New Commit

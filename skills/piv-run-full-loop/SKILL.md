@@ -35,11 +35,22 @@ skills' language rules.
 
 **Feature folder or `prd.md`**: a path to `prd.md` stands for its folder. Look at what the folder holds:
 
-- **`tickets.md`** → the feature is sliced, so build the next ticket: the first one in `Suggested execution order`
-  (document order if there is none) that has no plan in `plans/` and whose `Depends on` tickets all have a
-  `COMPLETE` report in `reports/`. Pass `<folder> T-n` to the planner and say in one line which ticket you picked
-  and why; the planner's Phase 0 summary names it again, so a wrong pick is caught at its GATE. If no ticket
-  qualifies, stop and list each ticket with its state (built / planned / waiting on T-x).
+- **`tickets.md`** → the feature is sliced, so build the next ticket. A ticket's state comes from the folder:
+  **built** = a `COMPLETE` report `reports/t-<n>-*-report*.md` (highest `-n` suffix); **planned** = a plan
+  `plans/t-<n>-*.md` but no `COMPLETE` report, or a branch `feature/t-<n>-*` not merged into the base (`git branch
+  --no-merged <base> --list 'feature/t-*'`: from the base branch, an unmerged ticket's plan isn't visible);
+  **ready** = neither, and every `Depends on` ticket is built. Check in that order: a squash-merged ticket shows as
+  built through its report even if its branch looks unmerged.
+  - A **planned** ticket comes first: it was started and left unfinished. Don't plan it again (that would write a
+    `-2` plan); stop, name it and its branch, and offer to resume it: switch to that branch, then
+    `piv-implement <plan>` and `piv-commit` (or, if it is already committed and only awaits review, open or merge
+    its PR). If it is in progress elsewhere on purpose (another worktree), the user can say so and the loop goes on
+    with the next ready ticket.
+  - Otherwise pick the first **ready** ticket in `Suggested execution order` (document order if there is none),
+    pass `<folder> T-n` to the planner and say in one line which one and why; the planner's Phase 0 summary names
+    it again, so a wrong pick is caught at its GATE.
+  - None ready → stop and list each ticket with its state (built / planned / waiting on T-x). A ticket waiting on a
+    built dependency whose branch isn't merged yet won't see its report: merge that PR first.
 - **`architecture.md` and no `tickets.md`** → pass the folder: the planner's small-scope path (it warns if the MVP
   exceeds one loop).
 - **Only `prd.md`** → stop and suggest `plan-architecture` with that folder. Planning straight from the PRD would
@@ -50,18 +61,16 @@ skills' language rules.
 Never hand the planner a feature folder that has a `tickets.md` without a `T-n`: it would plan the whole MVP and
 ignore the slicing.
 
-### 0b. Cut the feature branch before planning
+### 0b. Check the branch before planning
 
-The plan, the code and the report go in the same PR, so the branch comes first. (Otherwise `piv-implement` finds
-the uncommitted plan on the base branch and stops.) Detect the base branch as `piv-implement` does:
-`git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'` (fallback `main`).
+One run is one ticket on its own branch. The planner cuts it (`piv-plan-implementation`, Phase 5, holds the branch
+rule); check first what would make the loop stop there anyway:
 
 - **Not a git repository** → stop: the loop ends in a commit.
-- **On the base branch, clean** → `git checkout -b feature/<id>-<slug>`: `<id>` is `t-<n>`, the tracker key in
-  lowercase, or nothing; `<slug>` is a short kebab name from the ticket title or the description
-  (`feature/t-2-source-adapter`; just `feature/acc-30` if the title isn't known yet).
-- **Already on a feature branch or in a worktree** → use it.
-- **On the base branch with uncommitted changes** → stop: commit or stash first.
+- **On another ticket's branch** (typically the one the previous run just committed) → stop and ask: switch to the
+  base branch (after that ticket's PR is merged, if this one depends on it), or stack this ticket on purpose. Never
+  build a second ticket on the first one's branch silently.
+- **On the base branch with uncommitted changes outside `.agents/features/`** → stop: commit or stash first.
 
 ## Step 1: Prime
 
@@ -101,7 +110,8 @@ Read the report's `Status`:
 ## Left out on purpose
 
 `piv-validate` and `piv-review-changes` are not steps of this loop: `piv-implement` already runs every task's
-`VALIDATE` and all of the plan's `VALIDATION COMMANDS`, and `COMPLETE` requires them to pass. Run them separately
+`VALIDATE` and all of the plan's `VALIDATION COMMANDS`, whose levels 1–3 the planner takes from the same source as
+`piv-validate` (`## validate`, then CI and manifests), and `COMPLETE` requires them to pass. Run them separately
 when a change needs the project's whole suite or a second look, for example before opening the PR.
 
 ## Final summary
@@ -126,14 +136,16 @@ leave out the steps that didn't run.
 **Files**: <created / modified>; **Tests added**: <list>
 
 **Next steps**: `git push` and open the PR (the report is what the reviewer reads; `piv-review-changes <plan>` first
-if the change needs a second look). Then the next ticket: `/piv-run-full-loop <feature folder>`.
+if the change needs a second look: fix what it finds, then `piv-validate` and `piv-commit`). Merge it, switch back to
+the base branch, then the next ticket: `/piv-run-full-loop <feature folder>`.
 ```
 
 ## Success criteria
 
 - ✅ The input became one ticket, a small-scope feature folder or a free-form request; a PRD with no
   `architecture.md` was sent to `plan-architecture`, not planned.
-- ✅ The feature branch was cut before planning; nothing was built on the base branch.
+- ✅ The feature branch was cut before planning; nothing was built on the base branch or on another ticket's branch.
+- ✅ A planned-but-unbuilt ticket was offered for resuming, not planned again.
 - ✅ The user was asked once, at the planner's GATE; `piv-implement` didn't ask the same items again.
 - ✅ The loop committed only a `COMPLETE` ticket; a `PARTIAL` one stopped with what is left.
 - ✅ The summary names the branch, the plan, the report and the commit (or where and why it stopped).

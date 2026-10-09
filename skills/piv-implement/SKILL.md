@@ -18,21 +18,24 @@ that layout (an older one in `.claude/plans/`) has no feature folder.
 
 ## Language
 
-Write the report's content in the plan's language. Its headings stay in English, like the plan's.
+Write the report's content in the plan's language. Its headings, the `Status` values (`COMPLETE` / `PARTIAL`), the
+`AC-n` IDs and the `Met / Partial / Not met` values stay in English, like the plan's: `piv-run-full-loop`,
+`piv-plan-implementation` and `piv-review-changes` read them by name.
 
 ## Before you start
 
 ### 1. Work on a feature branch
 
-A ticket gets built on its own branch, so it can become one PR. **Ideally you're already on that branch (cut it
-before planning), so the plan commit rides into the PR; a plan committed on the base branch won't be in it.** If
-you're still on base, this step creates the branch now. Detect the base branch (don't hardcode `main`):
-`git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'` (fallback `main`).
+A ticket gets built on its own branch, so it can become one PR. `piv-plan-implementation` normally cut it already
+(its Phase 5 holds the branch rule); this step only checks, and covers a plan written on the base branch. Detect the
+base branch as the planner does (`git symbolic-ref refs/remotes/origin/HEAD`, fallback `main`).
 
-- **On the base branch, clean** → create one: `git checkout -b feature/<plan-slug>`, where `<plan-slug>` is the
-  plan's file name without `.md` (`feature/t-2-source-adapter`).
-- **Already on a feature branch or in a worktree** → use it.
-- **On the base branch with uncommitted changes** → STOP: commit or stash first.
+- **On this plan's branch** (`feature/<plan-file-stem>`, e.g. `feature/t-2-source-adapter`), or in a worktree → use it.
+- **On the base branch, and every uncommitted change is under the plan's feature folder** (the plan itself, its
+  `tickets.md`…) → `git checkout -b feature/<plan-file-stem>`; the changes come along into the PR.
+- **On the base branch with uncommitted changes outside the feature folder** → STOP: commit or stash them first.
+- **On another ticket's branch** → STOP and ask: switch to the base branch, or stack this ticket on purpose.
+- **Not a git repository** → STOP: the work has to become a commit.
 
 (One branch per ticket is also what makes parallel worktrees clean later.)
 
@@ -55,7 +58,7 @@ silently turns it into code that is costly to undo.
 **GATE:** post those items in one cluster, numbered, each with the plan's assumption as the recommended default,
 then stop and wait for the answers. If nothing is open, say so in one line and continue.
 
-If the caller runs you unattended (a factory prompt, or "don't ask"), don't wait: proceed with each assumption as
+If the caller runs you unattended (an automated runner, or "don't ask"), don't wait: proceed with each assumption as
 written and list it in the report under `Assumptions carried`.
 
 ## Execution Instructions
@@ -120,7 +123,8 @@ Before completing:
 - ✅ Documentation added/updated as needed
 
 In the plan file, tick (`- [x]`) the `ACCEPTANCE CRITERIA` and `COMPLETION CHECKLIST` items you verified and leave
-the rest unticked. For each deviation that makes the plan stop describing what was built, append one dated line to
+the rest unticked. A spike ticket: check that its outcome reached the feature's `architecture.md` (an `Outcome:` line
+under that spike); if the plan's last task didn't write it, add it now. For each deviation that makes the plan stop describing what was built, append one dated line to
 `AMENDMENTS` (what changed and why), so the tickets that depend on this one aren't misled by the plan.
 
 ## Output — write an implementation report

@@ -15,7 +15,8 @@ file plus the `.claude/references/` files the PIV skills look up. Never invent a
 Work in the language of the input: the architecture doc, else the PRD, else the existing rules file, else the user's
 first message. Use it for the conversation, the rules file and the report. Paths, commands and identifiers stay
 verbatim. The headings `## validate` and `## commit` in `conventions.md` stay exactly as written, because
-`piv-validate` and `piv-commit` find them by name. Keep the "TBD — needs validation" marker, translated.
+`piv-validate` and `piv-commit` find them by name. The marker `TBD — needs validation` stays in English, verbatim,
+in every artifact of the flow; that is also how you spot unsettled decisions in the architecture.
 
 ## Pick the lane
 
@@ -23,7 +24,7 @@ Classify each path by its content, by meaning and not by literal heading (headin
 
 | A passed path that is... | Lane | Use it as |
 |---|---|---|
-| A feature folder `.agents/features/<date>-<slug>/` | greenfield | its `architecture.md` (highest `-n` suffix) is the source; `prd.md` is context |
+| A feature folder `.agents/features/<date>-<slug>/` | greenfield | its `architecture.md` is the source; `prd.md` is context |
 | An architecture doc from `plan-architecture` (or a tracker URL/key of its page: fetch it via the Atlassian MCP, prefer the local copy) | greenfield | the technical decisions the rules derive from |
 | A PRD from `plan-create-prd` | greenfield | product context ("what this is") only; a PRD never carries engineering decisions |
 | A codebase-analysis doc | brownfield | the source of "what is" |
@@ -73,7 +74,8 @@ say so in the report.
 | Recommended approach · Missing pieces | the map (target structure) and the seams |
 | Key decisions: stack & libraries, boundaries & contracts, other durable calls | ground rules |
 | Key decisions: data model, measurability | a rule only if it constrains code (where models live, naming); otherwise a stub |
-| Spikes · Open questions · anything marked "TBD — needs validation" | **not rules**: unsettled is not a rule. Leave them out and count them for the report |
+| Spikes with an `Outcome:` | the decision they settled: a ground rule if it is durable |
+| Spikes with no `Outcome:` · Open questions · anything marked `TBD — needs validation` | **not rules**: unsettled is not a rule. Leave them out and count them for the report |
 
 The PRD supplies the one-paragraph "what this is". If the folder holds scaffold files, spot-check the map against them.
 
@@ -141,8 +143,9 @@ evidence. Per-line test: would removing it cause a mistake? If not, cut it.
 - 3–5 lines on what went into the root file and why; what went to `conventions.md` and to on-demand stubs.
 - What was left out on purpose: decisions still TBD or unresolved spikes (count them), commands you couldn't verify,
   the working principles if the user declined.
-- Next step. Greenfield: `plan-slice-tickets <feature folder>`, or `piv-plan-implementation <folder>` for a small
-  scope. Brownfield: the first loop, `piv-run-full-loop` or `piv-plan-implementation`.
+- Next step. Greenfield: `plan-slice-tickets <feature folder>`, or `piv-run-full-loop <folder>` for a small scope
+  (it plans the whole MVP as one ticket). Brownfield: the first loop, `piv-run-full-loop` or `piv-plan-implementation`.
+  When a spike ticket later records its `Outcome:`, run this skill again on the folder to pick up the settled decision.
 
 ## Success criteria
 
@@ -159,6 +162,6 @@ evidence. Per-line test: would removing it cause a mistake? If not, cut it.
 ## Notes
 
 - Rules evolve: revisit the root file as the project grows and after major model releases. Run `/rules-check-drift`
-  before merges; map entries that are real paths are what it can check.
+  before merges; map entries that are real paths, and the `## validate` commands, are what it can check.
 - `piv-review-changes` takes the root file as its quality bar and `piv-plan-implementation` reads it and
   `.claude/references/` when it plans, so a wrong or bloated line costs on every ticket.

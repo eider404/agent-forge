@@ -1,6 +1,6 @@
 ---
 name: plan-create-prd
-description: Interactive, problem-first PRD generator — interviews the user to surface the thesis (the problem, and WHY build it) and a falsifiable hypothesis, then writes a focused PRODUCT-level PRD (problem · evidence · thesis · hypothesis · users · MVP · success metrics · non-goals · open questions) in the same language as the user's input. Use at the start of a greenfield effort to discuss the product. A PRD is INTENT (what/why), never engineering decisions (how) — those are the `plan-architecture` skill's spec.
+description: Interactive, problem-first PRD generator — interviews the user to surface the thesis (the problem, and WHY build it) and a falsifiable hypothesis, then writes a focused PRODUCT-level PRD (problem · evidence · thesis · hypothesis · users · constraints · MVP & door check · success metrics · non-goals · open questions) in the same language as the user's input. Use at the start of a greenfield effort to discuss the product. A PRD is INTENT (what/why), never engineering decisions (how) — those are the `plan-architecture` skill's spec.
 argument-hint: "[product idea] · [optional: paths to research / reference docs to ground in] (blank = start with questions)"
 ---
 
@@ -17,8 +17,8 @@ passed, **ask whether any exist** before interviewing.
 
 Work in the **language of the user's input**: the idea in `$ARGUMENTS`, or — if it was blank — the language of
 their first answer. Use it for everything the user reads: interview questions, the PRD (section headings
-included) and the closing summary. If the input mixes languages, follow the dominant one. Keep the
-"TBD — needs validation" marker, translated into that language, and use it consistently.
+included) and the closing summary. If the input mixes languages, follow the dominant one. The one exception is the
+marker **`TBD — needs validation`**: keep it in English, verbatim, because the later skills find it by name.
 
 ## The one line
 
@@ -115,18 +115,23 @@ where their team's epics live; the local file is always written. Product section
 3. **Thesis (why build it)** — why this, why now, and why it beats how they cope today. The heart.
 4. **Hypothesis** — the right/wrong "We believe …" block from Phase 4.
 5. **Target User & JTBD** — primary user, the job-to-be-done, non-users.
-6. **MVP** — the thinnest line that proves the hypothesis end to end.
-7. **Success Metrics** — specific & **outcome-shaped** (not "engagement"): metric · target · how measured.
-8. **Non-goals** — what you're explicitly NOT doing.
-9. **Open Questions** — named, not hidden (checkboxes).
+6. **Constraints** — the givens from Phase 3 (deadline, budget, team, compliance, platforms they must run on),
+   stated as constraints, not as solutions.
+7. **MVP** — the thinnest line that proves the hypothesis end to end, plus the **door check**: the calls in it that
+   look like one-way doors (expensive to undo) and so deserve a spike, and the two-way ones.
+8. **Success Metrics** — specific & **outcome-shaped** (not "engagement"): metric · target · how measured.
+9. **Non-goals** — what you're explicitly NOT doing.
+10. **Open Questions** — named, not hidden (checkboxes).
 
 ## Output + hand off
 
 - Confirm where it landed (the `.agents/features/<YYYY-MM-DD>-<slug>/prd.md` path, plus the **tracker page URL** if a
   destination was named); 3-5 line summary leading with the **thesis** and **hypothesis**; show what's evidenced
   vs assumed and the open-questions count.
-- **Next step:** "Decide *how* to build it — run **`plan-architecture`** with the feature folder to make the engineering decisions (the spec)
-  that this PRD deliberately left open. That's what `rules-create-global` then turns into your global rules."
+- **Next step:** "Decide *how* to build it — run **`plan-architecture`** with the feature folder to make the
+  engineering decisions (the spec) that this PRD deliberately left open." The full path from here:
+  `plan-architecture` → `rules-create-global` (greenfield: the global rules, from the architecture) →
+  `plan-slice-tickets` → `piv-run-full-loop`, one ticket at a time.
 
 ## Success criteria — the six checks of a good PRD
 
@@ -139,7 +144,9 @@ where their team's epics live; the local file is always written. Product section
 
 ## Notes
 
-- Interview-led; never generate from thin air. Greenfield-first. On an existing product the epic is the input, and you decide its architecture separately with `plan-architecture`.
+- Interview-led; never generate from thin air. Greenfield-first. On an existing product, write the PRD for the
+  change (an existing epic is good input for the interview); `plan-architecture` then explores how it lands in the
+  codebase.
 - **Solo builder?** Building *for yourself* → you're the user; prove or kill it on yourself fast, you can jump
   closer to a solution. Building *for someone else* → you can't introspect their needs; building it *right*
   beats building it. Either way: thinnest MVP + experiments is how you learn what "right" is.

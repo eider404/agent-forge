@@ -27,8 +27,8 @@ whether any exist** before you start exploring — a lot of the context you need
 Work in the **language of the user's input**: the language the PRD was written in (or, if the PRD is
 ambiguous, the language of their first answer). Use it for everything the user reads: the
 conversation, the architecture doc (section headings included) and the closing summary. If the input mixes
-languages, follow the dominant one. Keep the "TBD — needs validation" marker, translated into that language, and
-use it consistently.
+languages, follow the dominant one. Two things stay in English, verbatim, because later skills find them by name:
+the marker **`TBD — needs validation`** and the spike field **`Outcome:`**.
 
 **Anti-fluff rule:** never invent a decision, constraint or requirement. Unknown → **"TBD — needs validation"**.
 
@@ -57,8 +57,8 @@ PRD's language), and use each part like this:
 | Success Metrics | what must be measurable (events, data captured) |
 | Non-goals | boundaries — don't architect for them |
 | Open Questions | engineering ones: settle or defer here. Product ones: carry them over, don't answer them |
-| Door check (MVP phase) | spike-vs-build: one-way door → spike first; two-way door → decide and move on |
-| Constraints | givens |
+| MVP › door check | spike-vs-build: one-way door → spike first; two-way door → decide and move on |
+| Constraints | givens every option must respect |
 
 If a part is missing or "TBD", ask instead of guessing. If the PRD slipped in engineering decisions (library,
 data model, security…), treat them as proposals to **confirm with the user**, not as silent givens.
@@ -133,7 +133,11 @@ When a decision is uncertain or expensive to undo (a one-way door), recommend a 
 Question:      [what we're unsure about]
 Spike:         [the smallest thing we can build or test to learn] over [timebox]
 Decision rule: go with [X] if [signal] / [Y] if [counter-signal]
+Outcome:       (empty until the spike is built — its ticket writes which side of the rule won, and the evidence)
 ```
+
+A spike without an `Outcome:` is an unsettled decision: `rules-create-global` leaves it out, and the tickets it
+blocks wait for it.
 
 Reversible, low-cost calls → just decide and move on.
 
@@ -142,8 +146,9 @@ Reversible, low-cost calls → just decide and move on.
 Only after the calls are made. Save it as **`architecture.md` in the same feature folder as the PRD**
 (`.agents/features/<YYYY-MM-DD>-<slug>/architecture.md`), so the pair lives together; reuse the folder, don't create a new one or a new date.
 If the PRD was given as a tracker URL with no local folder, create `.agents/features/<today>-<slug>/` (`date +%F`).
-The filename is always `architecture.md`; if it already exists, don't overwrite it: add a numeric suffix
-(`architecture-2.md`). The local file is always written.
+The filename is always `architecture.md`: one canonical file per feature, which every later skill reads. If it
+already exists, **GATE**: show what would change and ask before overwriting it (git keeps the previous version). If
+tickets were already sliced from it, say that `tickets.md` may need re-slicing. The local file is always written.
 
 **If the PRD was also published in a tracker** (a Confluence/Jira page or epic) **or the user names a
 destination**, also publish the same content there — via the Atlassian MCP — as a **separate page, child of the
@@ -184,7 +189,8 @@ The eng-lead-level calls made here, *before* the implementation plan:
 What has to exist that doesn't yet — the building blocks this approach depends on.
 
 ## Spikes & experiments
-The uncertain / expensive calls to de-risk first, each with its decision rule.
+The uncertain / expensive calls to de-risk first, each in the Spike block above (Question · Spike · Decision rule ·
+`Outcome:`, empty for now).
 
 ## Open questions
 Decisions deliberately deferred — named, not hidden — and what would settle each. Product questions carried over
@@ -197,12 +203,13 @@ Confirm where you wrote it (the `.agents/features/<YYYY-MM-DD>-<slug>/architectu
 if one was published), summarize the recommended approach + the key calls in a few lines, then offer the natural
 next moves and let the user pick — **don't force a pipeline**:
 
+- **Set the global rules** (greenfield; recommended before slicing) — run `/rules-create-global` with the feature
+  folder: it turns these settled decisions into the root `CLAUDE.md`/`AGENTS.md` that every ticket's loop reads.
 - **Slice it into tickets** — run `/plan-slice-tickets` with the feature folder (PRD + this architecture doc) to break the work
   into PIV-sized tickets, and create the GitHub issues / Jira tickets from them.
 - **Keep going here** — stay in this conversation to refine the decisions, or to create the issues/tickets directly.
 - **Small scope? Plan it in one go** — skip slicing and go straight to `piv-plan-implementation` for the implementation plan.
 - **Spike something now** — if an open risk is blocking, go build the spike/experiment we flagged.
-- Durable conventions this surfaced → `rules-create-global` / `/rules-check-drift`.
 
 ## Success criteria
 
@@ -214,5 +221,6 @@ next moves and let the user pick — **don't force a pipeline**:
 - ✅ **Risky / one-way calls get a spike**, not a guess.
 - ✅ **Grounded in the PRD** — scoped to its MVP; its hypothesis, metrics and non-goals shaped the decisions.
 - ✅ **Nothing invented** — unknowns marked "TBD — needs validation".
-- ✅ **In the user's language**, saved as `architecture.md` next to the PRD in its feature folder.
+- ✅ **In the user's language**, saved as `architecture.md` next to the PRD in its feature folder (overwritten only
+  after the user confirmed).
 - ✅ **Stays anchored to the user's goals.**
