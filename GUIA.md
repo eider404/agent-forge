@@ -1,489 +1,489 @@
-# Guía de uso de las skills v2
+# Skills v2 usage guide
 
-Qué son las skills de `.agents/skills/` de este repositorio, cómo instalarlas, qué flujos de trabajo cubren y cómo ejecutar cada una.
+What the skills in this repository's `.agents/skills/` are, how to install them, which workflows they cover and how to run each one.
 
 ---
 
-## 1. Qué son
+## 1. What they are
 
-Son **12 skills de Claude Code**: instrucciones en markdown (`.agents/skills/<nombre>/SKILL.md`, más sus `templates/` y `references/`) que el agente carga cuando las invocas. Juntas forman un flujo de desarrollo asistido por IA en **dos bucles**:
+They are **12 Claude Code skills**: markdown instructions (`.agents/skills/<name>/SKILL.md`, plus their `templates/` and `references/`) that the agent loads when you invoke them. Together they form an AI-assisted development flow in **two loops**:
 
-- **Bucle externo: qué construir.** Se ejecuta una vez por feature: PRD → arquitectura → reglas del proyecto → tickets.
-- **Bucle interno (PIV: Plan → Implement → Validate): cómo construirlo.** Se ejecuta una vez por ticket: preparar el contexto → plan → implementación → commit.
+- **Outer loop: what to build.** Runs once per feature: PRD → architecture → project rules → tickets.
+- **Inner loop (PIV: Plan → Implement → Validate): how to build it.** Runs once per ticket: prepare context → plan → implementation → commit.
 
 ```
-BUCLE EXTERNO (una vez por feature)
+OUTER LOOP (once per feature)
   plan-create-prd → plan-architecture → rules-create-global → plan-slice-tickets
-                                         (greenfield, o cuando
-                                          cambian las reglas)
+                                         (greenfield, or when
+                                          the rules change)
                                                                     │
-BUCLE INTERNO (una vez por ticket)                                  ▼
+INNER LOOP (once per ticket)                                        ▼
   piv-run-full-loop = prime-codebase → piv-plan-implementation → piv-implement → piv-commit
                                                                     │
-ANTES DEL PR (opcional)                                             ▼
-  piv-validate → piv-review-changes → (corregir → piv-validate → re-review) → rules-check-drift
+BEFORE THE PR (optional)                                            ▼
+  piv-validate → piv-review-changes → (fix → piv-validate → re-review) → rules-check-drift
 ```
 
-Cada skill deja un **artefacto** (un archivo) que la siguiente lee. Por eso puedes cortar el flujo en cualquier punto, cerrar la sesión y retomarlo después: el estado vive en disco, no en la conversación.
+Each skill leaves an **artifact** (a file) that the next one reads. That is why you can cut the flow at any point, close the session and resume later: state lives on disk, not in the conversation.
 
-### Las skills por grupo
+### The skills by group
 
-| Grupo | Skill | En una frase |
+| Group | Skill | In one sentence |
 |---|---|---|
-| **Plan** | `plan-create-prd` | Te entrevista y escribe un PRD centrado en el problema (qué y por qué, nunca cómo) |
-| | `plan-architecture` | Sesión de trabajo con un "CTO" para decidir stack, forma de datos, límites, riesgos y spikes |
-| | `plan-slice-tickets` | Corta la feature en tickets del tamaño de un loop PIV, con criterios `AC-n` y grafo de dependencias |
-| **Prime** | `prime-codebase` | Orienta al agente en el repo (estructura, docs, convenciones, git) antes de planear |
-| **PIV** | `piv-plan-implementation` | Crea la rama del ticket y un plan listo para implementarse en una pasada |
-| | `piv-implement` | Ejecuta el plan tarea por tarea validando cada una y escribe el reporte |
-| | `piv-validate` | Corre toda la suite del proyecto (tests, tipos, lint) y da un veredicto PASS/FAIL |
-| | `piv-review-changes` | Revisión técnica del cambio (y contra el plan, si se lo pasas); solo reporta |
-| | `piv-commit` | Un commit atómico con mensaje convencional, sin secretos ni artefactos de build |
-| | `piv-run-full-loop` | Construye un ticket de punta a punta con una sola pausa para preguntas |
-| **Capa de IA** | `rules-create-global` | Escribe `CLAUDE.md`/`AGENTS.md` y `.claude/references/conventions.md` (el `/init` personalizable) |
-| | `rules-check-drift` | Comprueba si las reglas y los comandos de `## validate` siguen siendo ciertos tras un cambio |
+| **Plan** | `plan-create-prd` | Interviews you and writes a problem-centered PRD (what and why, never how) |
+| | `plan-architecture` | Working session with a "CTO" to decide stack, data shape, boundaries, risks and spikes |
+| | `plan-slice-tickets` | Cuts the feature into PIV-loop-sized tickets, with `AC-n` criteria and a dependency graph |
+| **Prime** | `prime-codebase` | Orients the agent in the repo (structure, docs, conventions, git) before planning |
+| **PIV** | `piv-plan-implementation` | Creates the ticket's branch and a plan ready to implement in one pass |
+| | `piv-implement` | Executes the plan task by task, validating each one, and writes the report |
+| | `piv-validate` | Runs the project's whole suite (tests, types, lint) and gives a PASS/FAIL verdict |
+| | `piv-review-changes` | Technical review of the change (and against the plan, if you pass it); report only |
+| | `piv-commit` | One atomic commit with a conventional message, no secrets or build artifacts |
+| | `piv-run-full-loop` | Builds a ticket end to end with a single pause for questions |
+| **AI layer** | `rules-create-global` | Writes `CLAUDE.md`/`AGENTS.md` and `.claude/references/conventions.md` (the customizable `/init`) |
+| | `rules-check-drift` | Checks whether the rules and the `## validate` commands are still true after a change |
 
 ---
 
-## 2. Instalación
+## 2. Installation
 
-1. Desde la raíz de este repositorio, copia las 12 carpetas de `.agents/skills/` a `<tu-proyecto>/.claude/skills/`:
+1. From the root of this repository, copy the 12 folders in `.agents/skills/` to `<your-project>/.claude/skills/`:
 
    ```bash
-   mkdir -p <tu-proyecto>/.claude/skills
-   cp -r .agents/skills/* <tu-proyecto>/.claude/skills/
+   mkdir -p <your-project>/.claude/skills
+   cp -r .agents/skills/* <your-project>/.claude/skills/
    ```
 
-2. Abre Claude Code **en la raíz de tu proyecto**.
+2. Open Claude Code **at the root of your project**.
 
-> **Instálalas en `<tu-proyecto>/.claude/skills/`, no solo en `~/.claude/skills/` ni en `.agents/skills/`.** En este repositorio viven en `.agents/skills/`, pero las skills se referencian entre sí con rutas relativas al proyecto destino (`.claude/skills/<nombre>/…`; por ejemplo, `piv-plan-implementation` lee `.claude/skills/piv-validate/references/discover-commands.md`). Si están en otra ubicación, esas referencias se rompen.
+> **Install them in `<your-project>/.claude/skills/`, not only in `~/.claude/skills/` or `.agents/skills/`.** In this repository they live in `.agents/skills/`, but the skills reference each other with paths relative to the target project (`.claude/skills/<name>/…`; for example, `piv-plan-implementation` reads `.claude/skills/piv-validate/references/discover-commands.md`). If they are anywhere else, those references break.
 
-Requisitos: git (el bucle interno termina en un commit por rama). Opcionales: `gh` para GitHub Issues, el MCP de Atlassian para Jira/Confluence y `tree` (si no está instalado, `prime-codebase` usa `find`).
+Requirements: git (the inner loop ends in a commit per branch). Optional: `gh` for GitHub Issues, the Atlassian MCP for Jira/Confluence, and `tree` (if it is not installed, `prime-codebase` uses `find`).
 
 ---
 
-## 3. Cómo se ejecuta una skill
+## 3. How to run a skill
 
-Hay dos formas:
+There are two ways:
 
-- **Explícita, con barra:** `/<nombre-de-skill> <argumentos>`. Por ejemplo:
+- **Explicit, with a slash:** `/<skill-name> <arguments>`. For example:
   ```
   /piv-run-full-loop .agents/features/2026-10-08-csv-export T-2
   ```
-- **Implícita, en lenguaje natural:** el agente elige la skill por su `description`. Por ejemplo: "planifica el T-2", "revisa mis cambios", "haz commit".
+- **Implicit, in natural language:** the agent picks the skill from its `description`. For example: "plan T-2", "review my changes", "commit".
 
-Lo que conviene saber al ejecutarlas:
+Things worth knowing when running them:
 
-- **Sin argumentos, la mayoría infiere la entrada:** ofrecen la carpeta de feature más reciente que encaja (la última con `prd.md` y sin `architecture.md`, la última arquitectada, etc.) y la nombran para que puedas corregirla.
-- **Los workflows interactivos se detienen en un `GATE`:** publican una tanda de preguntas, cada una con un *default* recomendado, y esperan tu respuesta. Puedes contestar "acepta los defaults". Lo que no se sabe no se inventa: queda marcado `TBD — needs validation` o `Assumed — …`.
-- **Al terminar, cada skill sugiere el siguiente paso** con el comando exacto.
+- **Without arguments, most infer their input:** they offer the most recent feature folder that fits (the latest one with `prd.md` and no `architecture.md`, the latest one with architecture, etc.) and name it so you can correct it.
+- **Interactive workflows stop at a `GATE`:** they post a batch of questions, each with a recommended *default*, and wait for your answer. You can reply "accept the defaults". Whatever isn't known is not invented: it is marked `TBD — needs validation` or `Assumed — …`.
+- **When finished, each skill suggests the next step** with the exact command.
 
 ---
 
-## 4. Conceptos clave
+## 4. Key concepts
 
-### La carpeta de la feature
+### The feature folder
 
-Todo lo que genera una feature vive junto y entra en el PR con el código:
+Everything a feature generates lives together and goes into the PR with the code:
 
 ```
 .agents/features/<YYYY-MM-DD>-<slug>/
   prd.md                          ← plan-create-prd
-  architecture.md                 ← plan-architecture   (los spikes rellenan su Outcome:)
+  architecture.md                 ← plan-architecture   (spikes fill in their Outcome:)
   tickets.md                      ← plan-slice-tickets
-  plans/t-2-<nombre>.md           ← piv-plan-implementation
-  reports/t-2-<nombre>-report.md  ← piv-implement
-  reviews/t-2-<nombre>-review.md  ← piv-review-changes
+  plans/t-2-<name>.md             ← piv-plan-implementation
+  reports/t-2-<name>-report.md    ← piv-implement
+  reviews/t-2-<name>-review.md    ← piv-review-changes
 ```
 
-- `prd.md`, `architecture.md` y `tickets.md` son **canónicos**: hay uno por feature y solo se sobrescriben si lo confirmas.
-- Los planes, reportes y reviews **nunca se sobrescriben**: una segunda versión lleva el sufijo `-2`, `-3`… y la de número más alto es la vigente.
+- `prd.md`, `architecture.md` and `tickets.md` are **canonical**: there is one per feature and they are only overwritten if you confirm.
+- Plans, reports and reviews are **never overwritten**: a second version gets the suffix `-2`, `-3`… and the highest-numbered one is the current one.
 
-Lo que pertenece al proyecto y no a una feature va fuera de esa carpeta: `CLAUDE.md`/`AGENTS.md` en la raíz y `.claude/references/conventions.md`.
+What belongs to the project rather than to a feature lives outside that folder: `CLAUDE.md`/`AGENTS.md` at the root and `.claude/references/conventions.md`.
 
-### `conventions.md`: cómo se valida y cómo se commitea
+### `conventions.md`: how to validate and how to commit
 
-`.claude/references/conventions.md` lo crea `rules-create-global` y lo puedes editar tú. Tiene dos secciones que otras skills leen por su nombre literal:
+`.claude/references/conventions.md` is created by `rules-create-global` and you can edit it. It has two sections that other skills read by their literal name:
 
-- **`## validate`**: un bullet por check, con su comando y su directorio. Lo usan `piv-validate`, `piv-plan-implementation` (para los `VALIDATION COMMANDS` del plan) y `rules-check-drift`. Si falta, las skills descubren los comandos en el CI y en los manifiestos (`package.json`, `pyproject.toml`, `Makefile`…).
-- **`## commit`**: solo existe si tu proyecto se aparta de los defaults de conventional commits. Lo usa `piv-commit`.
+- **`## validate`**: one bullet per check, with its command and directory. Used by `piv-validate`, `piv-plan-implementation` (for the plan's `VALIDATION COMMANDS`) and `rules-check-drift`. If missing, the skills discover the commands from CI and the manifests (`package.json`, `pyproject.toml`, `Makefile`…).
+- **`## commit`**: exists only if your project departs from the conventional-commits defaults. Used by `piv-commit`.
 
-### Un ticket = una rama = un PR
+### One ticket = one branch = one PR
 
-- `piv-plan-implementation` crea la rama `feature/<id>-<nombre>` (por ejemplo, `feature/t-2-source-adapter`) **antes** de escribir el plan.
-- Si estás en la rama de otro ticket, el planner y el full-loop se detienen y te preguntan.
-- **Si un ticket depende de otro, mergea primero el PR del anterior:** desde la rama base, el reporte del ticket previo solo es visible cuando ya está mergeado.
+- `piv-plan-implementation` creates the branch `feature/<id>-<name>` (for example, `feature/t-2-source-adapter`) **before** writing the plan.
+- If you are on another ticket's branch, the planner and the full-loop stop and ask you.
+- **If a ticket depends on another, merge the earlier PR first:** from the base branch, the previous ticket's report is only visible once it has been merged.
 
-### Estado de un ticket
+### Ticket state
 
-`piv-run-full-loop` lo deduce de la carpeta de la feature:
+`piv-run-full-loop` infers it from the feature folder:
 
-| Estado | Señal |
+| State | Signal |
 |---|---|
-| **built** | Hay un reporte `reports/t-<n>-…-report.md` con `Status: COMPLETE` |
-| **planned** | Hay un plan, o una rama `feature/t-<n>-…` sin mergear, pero no un reporte `COMPLETE` |
-| **ready** | No está ni planificado ni construido, y todas sus dependencias (`Depends on`) están *built* |
+| **built** | There is a `reports/t-<n>-…-report.md` with `Status: COMPLETE` |
+| **planned** | There is a plan, or an unmerged `feature/t-<n>-…` branch, but no `COMPLETE` report |
+| **ready** | It is neither planned nor built, and all its dependencies (`Depends on`) are *built* |
 
-### Idioma
+### Language
 
-Escribes en tu idioma y los documentos salen en tu idioma. La **estructura** que leen otras skills queda en inglés: encabezados y campos de `tickets.md`, del plan y del reporte, los IDs `T-n`/`AC-n`, valores como `COMPLETE`/`PARTIAL` y `Met`/`Partial`/`Not met`, y las marcas `TBD — needs validation`, `Assumed — …` y `Outcome:`. No traduzcas esa estructura a mano: el loop la busca por su nombre exacto.
+You write in your language and the documents come out in your language. The **structure** that other skills read stays in English: headings and fields of `tickets.md`, the plan and the report, the `T-n`/`AC-n` IDs, values such as `COMPLETE`/`PARTIAL` and `Met`/`Partial`/`Not met`, and the markers `TBD — needs validation`, `Assumed — …` and `Outcome:`. Do not translate that structure by hand: the loop looks for it by its exact name.
 
 ---
 
-## 5. Flujos de trabajo
+## 5. Workflows
 
-### Flujo A: proyecto nuevo (greenfield), de la idea al primer PR
+### Workflow A: new project (greenfield), from idea to first PR
 
-Es el flujo completo y el caso para el que se diseñaron las skills.
+This is the complete flow and the case the skills were designed for.
 
 ```
-1. /plan-create-prd <idea> · [docs de research]
-      → .agents/features/2026-10-06-agrupar-hilos/prd.md
-2. /plan-architecture .agents/features/2026-10-06-agrupar-hilos
-      → architecture.md (stack, datos, límites, spikes)
-3. /rules-create-global .agents/features/2026-10-06-agrupar-hilos
+1. /plan-create-prd <idea> · [research docs]
+      → .agents/features/2026-10-06-thread-grouping/prd.md
+2. /plan-architecture .agents/features/2026-10-06-thread-grouping
+      → architecture.md (stack, data, boundaries, spikes)
+3. /rules-create-global .agents/features/2026-10-06-thread-grouping
       → CLAUDE.md + .claude/references/conventions.md + stubs
-4. /plan-slice-tickets .agents/features/2026-10-06-agrupar-hilos
-      → tickets.md (+ tracker si confirmas)
-5. /piv-run-full-loop .agents/features/2026-10-06-agrupar-hilos
-      → elige el siguiente ticket listo, lo planifica (pausa para preguntas),
-        lo implementa, escribe el reporte y lo commitea en su rama
-6. (opcional) /piv-validate · /piv-review-changes <plan> · /rules-check-drift main...HEAD
-7. push → PR → merge → vuelve a la rama base → repite el paso 5 con el siguiente ticket
+4. /plan-slice-tickets .agents/features/2026-10-06-thread-grouping
+      → tickets.md (+ tracker if you confirm)
+5. /piv-run-full-loop .agents/features/2026-10-06-thread-grouping
+      → picks the next ready ticket, plans it (pauses for questions),
+        implements it, writes the report and commits it on its branch
+6. (optional) /piv-validate · /piv-review-changes <plan> · /rules-check-drift main...HEAD
+7. push → PR → merge → go back to the base branch → repeat step 5 with the next ticket
 ```
 
-Notas:
+Notes:
 
-- En los pasos 1 y 2 hay varios GATE: es una conversación, no un documento que se genera de un tiro.
-- El paso 3 solo convierte en reglas las decisiones asentadas. Las marcadas `TBD` y los spikes sin `Outcome:` no se vuelven reglas. Vuelve a ejecutarlo cuando un spike registre su resultado.
-- En el paso 5 basta con pasar la carpeta: el loop elige el ticket por `Suggested execution order` y `Depends on`, y te dice cuál eligió y por qué. Para forzar uno concreto: `/piv-run-full-loop <carpeta> T-3`.
+- Steps 1 and 2 have several GATEs: it is a conversation, not a document generated in one shot.
+- Step 3 only turns settled decisions into rules. Those marked `TBD` and spikes without an `Outcome:` do not become rules. Run it again when a spike records its result.
+- In step 5 passing the folder is enough: the loop picks the ticket by `Suggested execution order` and `Depends on`, and tells you which one it chose and why. To force a specific one: `/piv-run-full-loop <folder> T-3`.
 
-### Flujo B: feature nueva en un proyecto existente (brownfield)
+### Workflow B: new feature in an existing project (brownfield)
 
 ```
 1. /rules-create-global
-      (solo la primera vez que incorporas el repo al flujo)
-      → deriva CLAUDE.md y conventions.md del código existente
+      (only the first time you bring the repo into the flow)
+      → derives CLAUDE.md and conventions.md from the existing code
 2. /plan-create-prd <idea>
-3. /plan-architecture <carpeta>
-      → detecta que es brownfield y explora el código antes de proponer
-4. /plan-slice-tickets <carpeta>
-5. /piv-run-full-loop <carpeta>   (una vez por ticket, como en el flujo A)
+3. /plan-architecture <folder>
+      → detects it is brownfield and explores the code before proposing
+4. /plan-slice-tickets <folder>
+5. /piv-run-full-loop <folder>   (once per ticket, as in workflow A)
 ```
 
-Si el repo ya tiene un `CLAUDE.md` y un `conventions.md` con `## validate`, sáltate el paso 1. `rules-create-global` nunca reescribe un `conventions.md` existente.
+If the repo already has a `CLAUDE.md` and a `conventions.md` with `## validate`, skip step 1. `rules-create-global` never rewrites an existing `conventions.md`.
 
-### Flujo C: alcance pequeño, sin tickets
+### Workflow C: small scope, no tickets
 
-Si la feature cabe en un solo loop, no hace falta cortarla en tickets:
+If the feature fits in a single loop, there is no need to cut it into tickets:
 
 ```
 1. /plan-create-prd <idea>
-2. /plan-architecture <carpeta>
-3. /piv-run-full-loop <carpeta>
-      (o /piv-plan-implementation <carpeta> → /piv-implement <plan> → /piv-commit)
+2. /plan-architecture <folder>
+3. /piv-run-full-loop <folder>
+      (or /piv-plan-implementation <folder> → /piv-implement <plan> → /piv-commit)
 ```
 
-Con una carpeta que tiene `architecture.md` pero no `tickets.md`, el planner toma el camino de alcance pequeño: propone criterios derivados del MVP y te avisa si el MVP no cabe en un loop. En ese caso, vuelve a `plan-slice-tickets`.
+With a folder that has `architecture.md` but no `tickets.md`, the planner takes the small-scope path: it proposes criteria derived from the MVP and warns you if the MVP does not fit in one loop. In that case, go back to `plan-slice-tickets`.
 
-> El loop **no** planifica directamente desde una carpeta que solo tiene `prd.md`: se detiene y te sugiere `plan-architecture`. Si planificara desde el PRD, decidiría el stack y el modelo de datos dentro de un plan de un ticket.
+> The loop does **not** plan directly from a folder that only has `prd.md`: it stops and suggests `plan-architecture`. If it planned from the PRD, it would decide the stack and the data model inside a single-ticket plan.
 
-### Flujo D: cambio puntual (bugfix, ajuste, tarea suelta)
+### Workflow D: one-off change (bugfix, tweak, loose task)
 
-Para algo que no merece PRD, usa texto libre o una clave de tracker:
+For something that doesn't deserve a PRD, use free text or a tracker key:
 
 ```
-/piv-run-full-loop Añadir paginación al endpoint GET /orders (25 por página)
+/piv-run-full-loop Add pagination to the GET /orders endpoint (25 per page)
 /piv-run-full-loop ACC-42
 /piv-run-full-loop https://github.com/org/repo/issues/17
 ```
 
-El plan y el reporte se guardan en una carpeta nueva, `.agents/features/<hoy>-<slug>/`. Si la descripción coincide claramente con una feature existente, el planner te ofrece usar esa carpeta.
+The plan and report are saved in a new folder, `.agents/features/<today>-<slug>/`. If the description clearly matches an existing feature, the planner offers to use that folder.
 
-### Flujo E: paso a paso, sin el full-loop
+### Workflow E: step by step, without the full-loop
 
-Úsalo cuando quieras revisar o editar el plan antes de construir, o dejar el código sin commitear para revisarlo:
+Use it when you want to review or edit the plan before building, or leave the code uncommitted so you can review it:
 
 ```
-1. /prime-codebase                                   (opcional; el planner reutiliza su salida)
-2. /piv-plan-implementation <carpeta> T-2            → crea la rama y escribe plans/t-2-<nombre>.md
-      ✋ revisa o edita el plan (sección AMENDMENTS si cambias algo)
-3. /piv-implement .agents/features/<…>/plans/t-2-<nombre>.md
-                                                     → código + reports/t-2-<nombre>-report.md
-4. /piv-validate <plan>                              (opcional)
-5. /piv-review-changes <plan>                        (opcional)
+1. /prime-codebase                                   (optional; the planner reuses its output)
+2. /piv-plan-implementation <folder> T-2             → creates the branch and writes plans/t-2-<name>.md
+      ✋ review or edit the plan (AMENDMENTS section if you change anything)
+3. /piv-implement .agents/features/<…>/plans/t-2-<name>.md
+                                                     → code + reports/t-2-<name>-report.md
+4. /piv-validate <plan>                              (optional)
+5. /piv-review-changes <plan>                        (optional)
 6. /piv-commit
 ```
 
-Diferencias con el full-loop:
+Differences from the full-loop:
 
-- `piv-implement` ejecutado por separado hace su propio GATE si el plan trae supuestos abiertos.
-- En el full-loop, esas preguntas ya se hicieron en el GATE del planner y no se repiten.
+- `piv-implement` run on its own has its own GATE if the plan carries open assumptions.
+- In the full-loop, those questions were already asked at the planner's GATE and are not repeated.
 
-### Flujo F: retomar un ticket interrumpido o `PARTIAL`
+### Workflow F: resume an interrupted or `PARTIAL` ticket
 
-- **Se cortó la sesión después del plan:** vuelve a ejecutar `/piv-run-full-loop <carpeta>`. Detecta el ticket *planned*, te dice cuál es y en qué rama está, y te ofrece retomarlo con `piv-implement <plan>` + `piv-commit`, en lugar de escribir un plan `-2`.
-- **El reporte quedó `PARTIAL`:** el loop se detiene **sin** hacer commit y explica qué falta y por qué. Termina el trabajo (a mano o pidiéndoselo al agente) y ejecuta `/piv-commit`. También puedes decidir commitear el trabajo tal como está.
-- **No hay ningún ticket listo:** el loop lista cada ticket con su estado (*built* / *planned* / esperando a `T-x`). Lo habitual es que falte mergear el PR de una dependencia.
+- **The session was cut after the plan:** run `/piv-run-full-loop <folder>` again. It detects the *planned* ticket, tells you which one it is and which branch it is on, and offers to resume it with `piv-implement <plan>` + `piv-commit`, instead of writing a `-2` plan.
+- **The report ended up `PARTIAL`:** the loop stops **without** committing and explains what is missing and why. Finish the work (by hand or by asking the agent) and run `/piv-commit`. You can also decide to commit the work as it stands.
+- **No ticket is ready:** the loop lists each ticket with its state (*built* / *planned* / waiting on `T-x`). The usual cause is that a dependency's PR has not been merged yet.
 
-### Flujo G: control de calidad antes del PR
+### Workflow G: quality control before the PR
 
-El full-loop no incluye `piv-validate` ni `piv-review-changes`: `piv-implement` ya ejecuta los checks del plan, y un reporte `COMPLETE` exige que pasen. Añade este ciclo cuando el cambio necesite la suite completa o una segunda mirada:
+The full-loop does not include `piv-validate` or `piv-review-changes`: `piv-implement` already runs the plan's checks, and a `COMPLETE` report requires them to pass. Add this cycle when the change needs the full suite or a second pair of eyes:
 
 ```
-/piv-validate                         → suite completa del proyecto: Overall PASS/FAIL
-/piv-review-changes <plan>            → reviews/<plan>-review.md + tabla AC-n → Yes/Partial/No
-   ¿hallazgos? → corrige (a mano o pidiéndoselo al agente con el archivo de review)
-              → /piv-validate → /piv-review-changes <plan>   (repite hasta que esté limpio)
-/piv-commit                           (si las correcciones dejaron cambios sin commitear)
-/rules-check-drift main...HEAD        → ¿las reglas y ## validate siguen siendo ciertos?
+/piv-validate                         → the project's full suite: Overall PASS/FAIL
+/piv-review-changes <plan>            → reviews/<plan>-review.md + AC-n → Yes/Partial/No table
+   findings? → fix (by hand or by asking the agent with the review file)
+             → /piv-validate → /piv-review-changes <plan>   (repeat until clean)
+/piv-commit                           (if the fixes left uncommitted changes)
+/rules-check-drift main...HEAD        → are the rules and ## validate still true?
 ```
 
-`piv-validate` y `piv-review-changes` **solo reportan, nunca corrigen**. `rules-check-drift` solo sugiere cambios. Si quieres aplicarlos, pídelo y se commitean con `piv-commit`.
+`piv-validate` and `piv-review-changes` **only report, they never fix**. `rules-check-drift` only suggests changes. If you want to apply them, ask for it and they are committed with `piv-commit`.
 
-### Flujo H: spikes (decisiones arriesgadas)
+### Workflow H: spikes (risky decisions)
 
-1. `plan-architecture` marca como spike cada decisión irreversible o arriesgada, con `Question · Spike · Decision rule · Outcome:`. El `Outcome:` queda vacío.
-2. `plan-slice-tickets` convierte cada spike sin `Outcome:` en un ticket de tipo `spike`. Los tickets que dependen de esa decisión quedan bloqueados (`Blocked by open questions / spikes`).
-3. Construye el spike como cualquier otro ticket (`/piv-run-full-loop <carpeta> T-1`). La última tarea de su plan escribe el resultado en el `Outcome:` de `architecture.md`, y `piv-implement` lo verifica.
-4. Vuelve a ejecutar `/rules-create-global <carpeta>` si la decisión debe convertirse en regla del proyecto.
+1. `plan-architecture` marks each irreversible or risky decision as a spike, with `Question · Spike · Decision rule · Outcome:`. The `Outcome:` is left empty.
+2. `plan-slice-tickets` turns each spike without an `Outcome:` into a ticket of type `spike`. Tickets that depend on that decision are blocked (`Blocked by open questions / spikes`).
+3. Build the spike like any other ticket (`/piv-run-full-loop <folder> T-1`). The last task of its plan writes the result into the `Outcome:` in `architecture.md`, and `piv-implement` verifies it.
+4. Run `/rules-create-global <folder>` again if the decision should become a project rule.
 
-### Flujo I: con tracker (Jira, GitHub, Linear)
+### Workflow I: with a tracker (Jira, GitHub, Linear)
 
-- `plan-create-prd` publica el PRD en el tracker (Confluence/Jira) si se lo pides. Si el PRD vive allí, `plan-architecture` publica también la arquitectura como página hija, enlazada en ambos sentidos.
-- `plan-slice-tickets` escribe siempre `tickets.md` y, **solo tras tu confirmación**, crea los tickets en el tracker.
-- Las skills PIV aceptan la clave o la URL del ticket: `/piv-run-full-loop ACC-30`. Una clave de Jira también se pasa a `prime-codebase` para anclar la exploración.
-- La carpeta local manda sobre el tracker cuando existen ambas.
+- `plan-create-prd` publishes the PRD to the tracker (Confluence/Jira) if you ask it to. If the PRD lives there, `plan-architecture` also publishes the architecture as a child page, linked both ways.
+- `plan-slice-tickets` always writes `tickets.md` and, **only after your confirmation**, creates the tickets in the tracker.
+- The PIV skills accept the ticket's key or URL: `/piv-run-full-loop ACC-30`. A Jira key is also passed to `prime-codebase` to anchor the exploration.
+- The local folder takes precedence over the tracker when both exist.
 
 ---
 
-## 6. Referencia por skill
+## 6. Reference by skill
 
 ### `plan-create-prd`
 
-**Qué hace:** te entrevista por fases (fundación → profundización → hipótesis → MVP y *door check*) para escribir un PRD de producto: problema, evidencia, tesis, hipótesis falsable, usuario y JTBD, restricciones, MVP, métricas, non-goals y preguntas abiertas. No toma decisiones de ingeniería.
+**What it does:** interviews you in phases (foundation → deepening → hypothesis → MVP and *door check*) to write a product PRD: problem, evidence, thesis, falsifiable hypothesis, user and JTBD, constraints, MVP, metrics, non-goals and open questions. It makes no engineering decisions.
 
-**Ejecución:**
+**Running it:**
 
 ```
-/plan-create-prd                                         # empieza preguntando
-/plan-create-prd Agrupar hilos cuando el volumen supera ~100/día
-/plan-create-prd Agrupar hilos · docs/research/encuestas.md   # lee primero el research como evidencia
+/plan-create-prd                                         # starts by asking
+/plan-create-prd Group threads when volume exceeds ~100/day
+/plan-create-prd Group threads · docs/research/surveys.md   # reads the research first as evidence
 ```
 
-**Produce:** `.agents/features/<fecha>-<slug>/prd.md` (y una página en el tracker, si lo pides).
+**Produces:** `.agents/features/<date>-<slug>/prd.md` (and a tracker page, if you ask).
 
-**Siguiente paso:** `plan-architecture`.
+**Next step:** `plan-architecture`.
 
 ### `plan-architecture`
 
-**Qué hace:** sesión iterativa con un asesor CTO/staff-engineer. Propone 2–3 enfoques con sus trade-offs, recomienda uno y decide stack, librerías, forma de los datos, límites de seguridad y contratos, y qué decisiones necesitan un spike. Detecta si el proyecto es greenfield o brownfield. Exige un PRD.
+**What it does:** iterative session with a CTO/staff-engineer advisor. It proposes 2–3 approaches with their trade-offs, recommends one, and decides stack, libraries, data shape, security boundaries and contracts, and which decisions need a spike. It detects whether the project is greenfield or brownfield. It requires a PRD.
 
-**Ejecución:**
+**Running it:**
 
 ```
-/plan-architecture                                       # ofrece el PRD más reciente sin arquitectura
-/plan-architecture .agents/features/2026-10-06-agrupar-hilos
-/plan-architecture .agents/features/2026-10-06-agrupar-hilos/prd.md · docs/adr/
+/plan-architecture                                       # offers the latest PRD without architecture
+/plan-architecture .agents/features/2026-10-06-thread-grouping
+/plan-architecture .agents/features/2026-10-06-thread-grouping/prd.md · docs/adr/
 ```
 
-**Produce:** `architecture.md` en la carpeta del PRD (si ya existe, pide confirmación antes de sobrescribirlo).
+**Produces:** `architecture.md` in the PRD's folder (if it already exists, it asks for confirmation before overwriting it).
 
-**Siguiente paso:** `rules-create-global` (greenfield) y luego `plan-slice-tickets`; o `piv-plan-implementation` si el alcance es pequeño.
+**Next step:** `rules-create-global` (greenfield) and then `plan-slice-tickets`; or `piv-plan-implementation` if the scope is small.
 
 ### `plan-slice-tickets`
 
-**Qué hace:** descompone la feature en tickets que un loop resuelve de una vez (~500–1500 líneas de cambio, un concern testeable por ticket). Cada ticket lleva `Type` (`build`/`spike`), `Scope`, `Acceptance criteria` (`AC-n`), `Architecture decisions`, `Per-ticket context`, `Files touched` y `Depends on`. También genera el grafo de dependencias y el orden de ejecución sugerido.
+**What it does:** breaks the feature into tickets that one loop can resolve at once (~500–1500 lines of change, one testable concern per ticket). Each ticket carries `Type` (`build`/`spike`), `Scope`, `Acceptance criteria` (`AC-n`), `Architecture decisions`, `Per-ticket context`, `Files touched` and `Depends on`. It also generates the dependency graph and the suggested execution order.
 
-**Ejecución:**
+**Running it:**
 
 ```
-/plan-slice-tickets                                      # ofrece la feature arquitectada más reciente
-/plan-slice-tickets .agents/features/2026-10-06-agrupar-hilos
+/plan-slice-tickets                                      # offers the latest architected feature
+/plan-slice-tickets .agents/features/2026-10-06-thread-grouping
 ```
 
-**Produce:** `tickets.md`. Al volver a cortar, los tickets que ya tienen plan o reporte conservan su número. Tras tu confirmación, también crea los tickets en el tracker.
+**Produces:** `tickets.md`. When re-slicing, tickets that already have a plan or report keep their number. After your confirmation, it also creates the tickets in the tracker.
 
-**Siguiente paso:** `piv-run-full-loop <carpeta>`.
+**Next step:** `piv-run-full-loop <folder>`.
 
 ### `prime-codebase`
 
-**Qué hace:** orienta al agente. Lee la estructura (`tree`/`find`), `CLAUDE.md`/`AGENTS.md`, `conventions.md` y los README; identifica puntos de entrada, configuración y modelos clave; y revisa el estado de git (también funciona fuera de un repo). Devuelve un resumen escaneable.
+**What it does:** orients the agent. It reads the structure (`tree`/`find`), `CLAUDE.md`/`AGENTS.md`, `conventions.md` and the READMEs; identifies entry points, configuration and key models; and checks git state (it also works outside a repo). It returns a scannable summary.
 
-**Ejecución:**
+**Running it:**
 
 ```
 /prime-codebase
-/prime-codebase ACC-2,ACC-3            # carga antes esos issues de Jira
-/prime-codebase ACC-2 4521098          # issue de Jira + página de Confluence
+/prime-codebase ACC-2,ACC-3            # first loads those Jira issues
+/prime-codebase ACC-2 4521098          # Jira issue + Confluence page
 ```
 
-**Produce:** solo el resumen en la conversación. El planner lo reutiliza.
+**Produces:** only the summary in the conversation. The planner reuses it.
 
 ### `piv-plan-implementation`
 
-**Qué hace:**
+**What it does:**
 
-1. Lee el ticket, las decisiones de arquitectura que le afectan, el alcance del PRD y el plan y reporte de sus dependencias.
-2. Analiza el código y hace una tanda corta de preguntas (GATE).
-3. Investiga la documentación externa.
-4. **Crea la rama** y escribe el plan con la forma de `templates/plan.md`: decisiones heredadas, patrones a seguir, tareas atómicas (`IMPLEMENT/PATTERN/IMPORTS/GOTCHA/VALIDATE/SATISFIES`), `VALIDATION COMMANDS` y `ACCEPTANCE CRITERIA`.
+1. Reads the ticket, the architecture decisions that affect it, the PRD scope and the plan and report of its dependencies.
+2. Analyzes the code and asks a short batch of questions (GATE).
+3. Researches the external documentation.
+4. **Creates the branch** and writes the plan in the shape of `templates/plan.md`: inherited decisions, patterns to follow, atomic tasks (`IMPLEMENT/PATTERN/IMPORTS/GOTCHA/VALIDATE/SATISFIES`), `VALIDATION COMMANDS` and `ACCEPTANCE CRITERIA`.
 
-**Ejecución:**
+**Running it:**
 
 ```
 /piv-plan-implementation .agents/features/2026-10-08-csv-export T-2
-/piv-plan-implementation T-2                             # usa la carpeta más reciente con tickets.md
-/piv-plan-implementation ACC-30                          # clave o URL de tracker
-/piv-plan-implementation .agents/features/2026-10-08-csv-export   # alcance pequeño, sin tickets
-/piv-plan-implementation Añadir login con JWT            # texto libre
+/piv-plan-implementation T-2                             # uses the latest folder with tickets.md
+/piv-plan-implementation ACC-30                          # tracker key or URL
+/piv-plan-implementation .agents/features/2026-10-08-csv-export   # small scope, no tickets
+/piv-plan-implementation Add login with JWT              # free text
 ```
 
-**Produce:** la rama `feature/<id>-<nombre>` y `plans/<id>-<nombre>.md`.
+**Produces:** the branch `feature/<id>-<name>` and `plans/<id>-<name>.md`.
 
-**Siguiente paso:** `piv-implement <plan>`.
+**Next step:** `piv-implement <plan>`.
 
 ### `piv-implement`
 
-**Qué hace:**
+**What it does:**
 
-1. Verifica que está en la rama del plan. Si el plan se escribió en la rama base, crea la rama y se lleva los cambios de la carpeta de la feature.
-2. Hace un GATE si el plan trae supuestos abiertos.
-3. Implementa tarea por tarea y ejecuta el `VALIDATE` de cada una antes de pasar a la siguiente.
-4. Corre todos los `VALIDATION COMMANDS` y marca los criterios cumplidos.
+1. Verifies it is on the plan's branch. If the plan was written on the base branch, it creates the branch and carries over the changes in the feature folder.
+2. Runs a GATE if the plan carries open assumptions.
+3. Implements task by task and runs each one's `VALIDATE` before moving to the next.
+4. Runs all the `VALIDATION COMMANDS` and marks the criteria met.
 
-Respeta el `Out of Scope` del plan y las decisiones heredadas.
+It respects the plan's `Out of Scope` and the inherited decisions.
 
-**Ejecución:**
+**Running it:**
 
 ```
 /piv-implement .agents/features/2026-10-08-csv-export/plans/t-2-source-adapter.md
 ```
 
-**Produce:** el código y `reports/<plan>-report.md`, con `Status` (`COMPLETE`/`PARTIAL`), la tabla de `AC-n`, las desviaciones, `Assumptions carried` y `Built (for dependent tickets)`. En un spike, verifica que el `Outcome:` quedó escrito en `architecture.md`.
+**Produces:** the code and `reports/<plan>-report.md`, with `Status` (`COMPLETE`/`PARTIAL`), the `AC-n` table, deviations, `Assumptions carried` and `Built (for dependent tickets)`. In a spike, it verifies that the `Outcome:` was written in `architecture.md`.
 
-**Siguiente paso:** `piv-commit`.
+**Next step:** `piv-commit`.
 
 ### `piv-validate`
 
-**Qué hace:** descubre los comandos (`## validate` → CI → manifiestos), te muestra la tabla de comandos resueltos y los ejecuta todos: tests, type-check y lint/format de cada parte del stack. Sigue aunque uno falle y devuelve una fila por check y un veredicto `Overall: PASS/FAIL`. Un check sin comando aparece como `⏭️ skipped`, con su motivo. No escribe archivos ni corrige nada.
+**What it does:** discovers the commands (`## validate` → CI → manifests), shows you the table of resolved commands and runs them all: tests, type-check and lint/format for every part of the stack. It keeps going even if one fails and returns one row per check and an `Overall: PASS/FAIL` verdict. A check without a command appears as `⏭️ skipped`, with its reason. It writes no files and fixes nothing.
 
-**Ejecución:**
+**Running it:**
 
 ```
-/piv-validate                                            # suite completa del proyecto
-/piv-validate .agents/features/<…>/plans/t-2-<nombre>.md # + checks del plan y tabla AC-n → resultado
+/piv-validate                                            # the project's full suite
+/piv-validate .agents/features/<…>/plans/t-2-<name>.md   # + the plan's checks and AC-n → result table
 ```
 
-**Siguiente paso:** `piv-review-changes`, o `piv-commit`.
+**Next step:** `piv-review-changes`, or `piv-commit`.
 
 ### `piv-review-changes`
 
-**Qué hace:** revisa el cambio leyendo cada archivo completo: lógica, seguridad, rendimiento y adherencia a `CLAUDE.md` y `conventions.md`. Revisa los cambios sin commitear o, con el árbol limpio, los commits `<base>...HEAD`. Con un plan, revisa además los `AC-n`, el `Out of Scope` y las `Inherited decisions`. Las desviaciones documentadas en el reporte no cuentan como hallazgo; un `AC-n` declarado `Met` que el código no cumple, sí. Solo reporta.
+**What it does:** reviews the change by reading each file in full: logic, security, performance and adherence to `CLAUDE.md` and `conventions.md`. It reviews uncommitted changes or, with a clean tree, the `<base>...HEAD` commits. With a plan, it also reviews the `AC-n`, the `Out of Scope` and the `Inherited decisions`. Deviations documented in the report do not count as findings; an `AC-n` declared `Met` that the code does not satisfy does. It only reports.
 
-**Ejecución:**
+**Running it:**
 
 ```
 /piv-review-changes
-/piv-review-changes .agents/features/<…>/plans/t-2-<nombre>.md
+/piv-review-changes .agents/features/<…>/plans/t-2-<name>.md
 ```
 
-**Produce:** `reviews/<plan>-review.md`, con hallazgos `severity/file/line/issue/detail/suggestion` y, si pasas un plan, la tabla `AC-n → Yes/Partial/No`. Sin plan, lo guarda en la carpeta de la feature afectada o en una nueva con la fecha de hoy.
+**Produces:** `reviews/<plan>-review.md`, with `severity/file/line/issue/detail/suggestion` findings and, if you pass a plan, the `AC-n → Yes/Partial/No` table. Without a plan, it saves it in the affected feature's folder or in a new one dated today.
 
-**Siguiente paso:** corregir → `piv-validate` → repetir la review; o `piv-commit`.
+**Next step:** fix → `piv-validate` → repeat the review; or `piv-commit`.
 
 ### `piv-commit`
 
-**Qué hace:** crea un solo commit atómico con todos los cambios pendientes y un mensaje `<tag>: <descripción>`. Si existe `conventions.md › ## commit`, sus reglas mandan. Deja fuera del commit los secretos (`.env`, claves, credenciales, también dentro del contenido de un archivo) y los archivos de build o de más de ~5 MB, y te avisa de lo que dejó fuera. **No hace push.**
+**What it does:** creates a single atomic commit with all pending changes and a `<tag>: <description>` message. If `conventions.md › ## commit` exists, its rules take precedence. It leaves secrets (`.env`, keys, credentials, also inside a file's content) and build files or files over ~5 MB out of the commit, and tells you what it left out. **It does not push.**
 
-**Ejecución:**
+**Running it:**
 
 ```
 /piv-commit
 ```
 
-**Produce:** el commit, y un resumen con el hash, qué cambió, `Left Out of the Commit` y `AI Layer Changes` si se tocó `.claude/`.
+**Produces:** the commit, and a summary with the hash, what changed, `Left Out of the Commit` and `AI Layer Changes` if `.claude/` was touched.
 
 ### `piv-run-full-loop`
 
-**Qué hace:** encadena `prime-codebase` → `piv-plan-implementation` → `piv-implement` → `piv-commit` para **un** ticket. Solo se detiene una vez, en el GATE del planner, y después llega hasta el commit, salvo que algo falle.
+**What it does:** chains `prime-codebase` → `piv-plan-implementation` → `piv-implement` → `piv-commit` for **one** ticket. It stops only once, at the planner's GATE, and after that goes all the way to the commit unless something fails.
 
-**Ejecución:**
+**Running it:**
 
 ```
-/piv-run-full-loop .agents/features/2026-10-08-csv-export        # siguiente ticket listo
-/piv-run-full-loop .agents/features/2026-10-08-csv-export/prd.md # ídem
-/piv-run-full-loop .agents/features/2026-10-08-csv-export T-3    # un ticket concreto
-/piv-run-full-loop ACC-30                                        # ticket del tracker
-/piv-run-full-loop Añadir paginación a GET /orders               # texto libre
+/piv-run-full-loop .agents/features/2026-10-08-csv-export        # next ready ticket
+/piv-run-full-loop .agents/features/2026-10-08-csv-export/prd.md # same
+/piv-run-full-loop .agents/features/2026-10-08-csv-export T-3    # a specific ticket
+/piv-run-full-loop ACC-30                                        # tracker ticket
+/piv-run-full-loop Add pagination to GET /orders                 # free text
 ```
 
-**Se detiene si:**
+**It stops if:**
 
-- no estás en un repositorio git;
-- estás en la rama de otro ticket;
-- hay cambios sin commitear en la rama base fuera de `.agents/features/`;
-- la carpeta solo tiene `prd.md` (te sugiere `plan-architecture`);
-- hay un ticket *planned* (te ofrece retomarlo);
-- ningún ticket está listo;
-- el reporte queda `PARTIAL` (no hace commit).
+- you are not in a git repository;
+- you are on another ticket's branch;
+- there are uncommitted changes on the base branch outside `.agents/features/`;
+- the folder only has `prd.md` (it suggests `plan-architecture`);
+- there is a *planned* ticket (it offers to resume it);
+- no ticket is ready;
+- the report ends up `PARTIAL` (it does not commit).
 
-**Después:** push → PR → merge → vuelve a la rama base y ejecuta el loop otra vez.
+**Afterwards:** push → PR → merge → go back to the base branch and run the loop again.
 
 ### `rules-create-global`
 
-**Qué hace:** escribe un `CLAUDE.md` (o `AGENTS.md`) raíz y ligero: mapa del código, dónde va el código nuevo, convenciones concretas, comandos y los principios de trabajo que tú eliges (los pregunta en un GATE). También crea `.claude/references/conventions.md` (con un `## validate` verificable y, si hace falta, `## commit`) y stubs de contexto. En greenfield deriva las reglas de `architecture.md`; en brownfield, del código (ya preparado con `prime-codebase`, de un documento de análisis o de una lectura mínima).
+**What it does:** writes a lean root `CLAUDE.md` (or `AGENTS.md`): code map, where new code goes, concrete conventions, commands and the working principles you choose (it asks in a GATE). It also creates `.claude/references/conventions.md` (with a verifiable `## validate` and, if needed, `## commit`) and context stubs. In greenfield it derives the rules from `architecture.md`; in brownfield, from the code (already primed with `prime-codebase`, from an analysis document, or from a minimal read).
 
-**Ejecución:**
+**Running it:**
 
 ```
-/rules-create-global                                     # feature arquitectada más reciente, o el código
-/rules-create-global .agents/features/2026-10-06-agrupar-hilos/
-/rules-create-global docs/prd.md docs/architecture.md    # rutas sueltas
-/rules-create-global docs/codebase-analysis.md           # brownfield con documento de análisis
+/rules-create-global                                     # latest architected feature, or the code
+/rules-create-global .agents/features/2026-10-06-thread-grouping/
+/rules-create-global docs/prd.md docs/architecture.md    # loose paths
+/rules-create-global docs/codebase-analysis.md           # brownfield with an analysis document
 ```
 
-**Siguiente paso:** `plan-slice-tickets` (greenfield) o el primer loop PIV (brownfield). Más adelante, `rules-check-drift`.
+**Next step:** `plan-slice-tickets` (greenfield) or the first PIV loop (brownfield). Later on, `rules-check-drift`.
 
 ### `rules-check-drift`
 
-**Qué hace:** compara `CLAUDE.md`/`AGENTS.md` y el `## validate` de `conventions.md` con el diff. Solo reporta cuatro tipos de problema: una regla que ya es falsa, una entrada del mapa desactualizada, un comando de `## validate` que ya no existe y un invariante nuevo que merezca una línea. Si nada cambió de verdad, no sugiere nada. Es asesora: no edita.
+**What it does:** compares `CLAUDE.md`/`AGENTS.md` and the `## validate` in `conventions.md` against the diff. It reports only four kinds of problem: a rule that is now false, an outdated map entry, a `## validate` command that no longer exists, and a new invariant that deserves a line. If nothing really changed, it suggests nothing. It is advisory: it does not edit.
 
-**Ejecución:**
+**Running it:**
 
 ```
-/rules-check-drift                     # detecta la base como piv-review-changes
+/rules-check-drift                     # detects the base like piv-review-changes
 /rules-check-drift main...HEAD
 ```
 
-**Siguiente paso:** si pides aplicar los cambios, se commitean con `piv-commit`.
+**Next step:** if you ask to apply the changes, they are committed with `piv-commit`.
 
 ---
 
-## 7. Chuleta: "quiero…"
+## 7. Cheat sheet: "I want to…"
 
-| Quiero… | Ejecuta |
+| I want to… | Run |
 |---|---|
-| Empezar un producto o feature desde una idea | `/plan-create-prd <idea>` |
-| Decidir cómo construir un PRD | `/plan-architecture <carpeta>` |
-| Generar `CLAUDE.md` y los comandos de validación | `/rules-create-global [<carpeta>]` |
-| Cortar la feature en tickets | `/plan-slice-tickets <carpeta>` |
-| Construir el siguiente ticket de punta a punta | `/piv-run-full-loop <carpeta>` |
-| Construir un ticket concreto | `/piv-run-full-loop <carpeta> T-n` |
-| Arreglar algo puntual sin PRD | `/piv-run-full-loop <descripción>` |
-| Solo planificar y revisar el plan antes de construir | `/piv-plan-implementation <carpeta> T-n` |
-| Construir un plan ya escrito | `/piv-implement <ruta-del-plan>` |
-| Saber si todo está en verde | `/piv-validate [<plan>]` |
-| Una revisión de código antes del PR | `/piv-review-changes [<plan>]` |
-| Commitear lo pendiente sin colar secretos | `/piv-commit` |
-| Comprobar que `CLAUDE.md` sigue siendo cierto | `/rules-check-drift main...HEAD` |
-| Que el agente conozca el repo | `/prime-codebase [claves-jira]` |
+| Start a product or feature from an idea | `/plan-create-prd <idea>` |
+| Decide how to build a PRD | `/plan-architecture <folder>` |
+| Generate `CLAUDE.md` and the validation commands | `/rules-create-global [<folder>]` |
+| Cut the feature into tickets | `/plan-slice-tickets <folder>` |
+| Build the next ticket end to end | `/piv-run-full-loop <folder>` |
+| Build a specific ticket | `/piv-run-full-loop <folder> T-n` |
+| Fix something small without a PRD | `/piv-run-full-loop <description>` |
+| Only plan and review the plan before building | `/piv-plan-implementation <folder> T-n` |
+| Build an already-written plan | `/piv-implement <plan-path>` |
+| Know whether everything is green | `/piv-validate [<plan>]` |
+| A code review before the PR | `/piv-review-changes [<plan>]` |
+| Commit what's pending without leaking secrets | `/piv-commit` |
+| Check that `CLAUDE.md` is still true | `/rules-check-drift main...HEAD` |
+| Have the agent get to know the repo | `/prime-codebase [jira-keys]` |
 
 ---
 
-## 8. Herramientas complementarias (originales, opcionales)
+## 8. Complementary tools (original, optional)
 
-No forman parte del flujo, ninguna skill v2 depende de ellas y **no están incluidas en este repositorio** (`.agents/skills/` solo contiene las 12 skills del flujo). Si las quieres, instálalas por separado en `<tu-proyecto>/.claude/skills/`.
+They are not part of the flow, no v2 skill depends on them, and they are **not included in this repository** (`.agents/skills/` only contains the 12 flow skills). If you want them, install them separately in `<your-project>/.claude/skills/`.
 
-- **`agent-browser`**: automatización de navegador (Chrome por CDP) para navegar, rellenar formularios, hacer clic, capturar pantalla o extraer datos. Antes de usarla, carga su guía real con `agent-browser skills get core`.
-- **`ast-grep`**: búsqueda estructural de código por AST, por ejemplo "funciones async sin try/catch", con `ast-grep run` o `ast-grep scan`.
+- **`agent-browser`**: browser automation (Chrome over CDP) to navigate, fill forms, click, take screenshots or extract data. Before using it, load its real guide with `agent-browser skills get core`.
+- **`ast-grep`**: structural code search by AST, for example "async functions without try/catch", with `ast-grep run` or `ast-grep scan`.
